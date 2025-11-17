@@ -1,0 +1,20 @@
+{
+  "name": "multichoice-proxy",
+  "version": "1.0.0",
+  "description": "Backend proxy server for MultiChoice app to handle Anthropic API calls",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["proxy", "anthropic", "claude"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.7.0"
+  }
+}
+
+

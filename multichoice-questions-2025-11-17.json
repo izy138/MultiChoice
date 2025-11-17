@@ -1,0 +1,673 @@
+{
+  "version": "1.0",
+  "exportDate": "2025-11-17T04:24:17.145Z",
+  "questionCount": 66,
+  "questions": [
+    {
+      "question": "An ordered resources policy assigns a sequential order to every resource. Forcing processes to request resources in the sequential order eliminates _____.",
+      "options": [
+        "the circular-wait condition",
+        "both the circular-wait and the hold-and-wait conditions",
+        "neither the circular-wait nor the hold-and-wait condition",
+        "the hold-and-wait condition"
+      ],
+      "correctAnswer": 0,
+      "explanation": "By enforcing a sequential ordering of resource requests, the circular-wait condition is eliminated because processes cannot form a circular chain waiting for resources requested in different orders."
+    },
+    {
+      "question": "Explain how the concept of mutual exclusion is related to the critical section problem.",
+      "options": [
+        "It unlocks the mutex and allows other threads to access the critical section.",
+        "Mutual exclusion prevents race conditions by allowing all threads to execute concurrently.",
+        "Mutual exclusion ensures that only one thread can execute a critical section at a time.",
+        "Mutual exclusion is a technique used to achieve thread concurrency."
+      ],
+      "correctAnswer": 2,
+      "explanation": "Mutual exclusion is the core principle that solves the critical section problem by ensuring that only one thread can execute the critical section at any given time, preventing race conditions."
+    },
+    {
+      "question": "With single-unit resources, deadlock is avoided by preventing _____.",
+      "options": [
+        "blocked processes to make new requests",
+        "allocations to blocked processes",
+        "a complete reduction of the resource claim graph",
+        "a cycle to form in the resource allocation graph"
+      ],
+      "correctAnswer": 3,
+      "explanation": "With single-unit resources, if no cycle exists in the resource allocation graph, no deadlock can occur. Preventing cycles prevents deadlock from happening."
+    },
+    {
+      "question": "In the Reader-Writer Problem, if a writer is currently writing, new readers that arrive:",
+      "options": [
+        "Can proceed and read concurrently with the writer",
+        "Will be given preference over the writer",
+        "Must wait until the writer is finished",
+        "Will be given priority to write over the writer"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Readers must wait until a writer finishes because allowing concurrent reads while writing would result in readers obtaining inconsistent data."
+    },
+    {
+      "question": "What does the pthread_mutex_lock() function do?",
+      "options": [
+        "It destroys the mutex and releases any associated resources.",
+        "It waits until the mutex is available, then locks it to allow exclusive access to the critical section.",
+        "It signals waiting threads that the critical section is available for execution.",
+        "It unlocks the mutex and allows other threads to access the critical section."
+      ],
+      "correctAnswer": 1,
+      "explanation": "pthread_mutex_lock() blocks the calling thread until the mutex is available, then atomically locks it to provide exclusive access to the critical section."
+    },
+    {
+      "question": "Which of the following is NOT a common technique for preventing race conditions?",
+      "options": [
+        "Mutual exclusion",
+        "Deadlock avoidance",
+        "Synchronization primitives",
+        "Semaphores"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Deadlock avoidance is used to prevent deadlocks, not race conditions. Mutual exclusion, synchronization primitives, and semaphores are all used to prevent race conditions."
+    },
+    {
+      "question": "A semaphore s is a non-negative integer variable that can be accessed using only two special operations, wait() and signal(). The operations are: signal(s) increments s by 1, and wait(s) decrements s by 1 if s > 0, otherwise waits until s > 0. Is this true?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This is an accurate description of how semaphores work. The signal() operation increments the semaphore, and wait() decrements it, with blocking behavior when the value is zero."
+    },
+    {
+      "question": "A deadlock can occur if the 'hold and wait' condition is eliminated.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If the hold and wait condition is eliminated, deadlock cannot occur because processes cannot hold resources while waiting for others. Eliminating any of the four necessary conditions prevents deadlock."
+    },
+    {
+      "question": "Which of the following describes busy waiting?",
+      "options": [
+        "A process constantly checking a condition instead of sleeping",
+        "A process waiting in the ready queue",
+        "A process blocked due to I/O operations",
+        "A process waiting without consuming CPU resources"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Busy waiting occurs when a process continuously checks a condition in a loop rather than being put to sleep, wasting CPU cycles in the process."
+    },
+    {
+      "question": "What is a common problem in Priority Scheduling?",
+      "options": [
+        "Starvation",
+        "Aging",
+        "Convoy effect",
+        "Time slicing"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Starvation is a common problem in priority scheduling where low-priority processes may never get CPU time if higher-priority processes keep arriving."
+    },
+    {
+      "question": "Which scheduling algorithm minimizes the average waiting time?",
+      "options": [
+        "First-Come, First-Served",
+        "Shortest Job First",
+        "Priority Scheduling",
+        "Round Robin"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Shortest Job First (SJF) minimizes average waiting time by always scheduling the process with the shortest burst time next, reducing overall wait time for all processes."
+    },
+    {
+      "question": "A system has 5 processes with burst times of 10ms each. If a round-robin scheduler with a 4ms time quantum is used, how many context switches occur?",
+      "options": [
+        "15",
+        "13",
+        "14",
+        "12"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Each process needs 3 time slices (10ms / 4ms = 2.5, rounded up to 3). With 5 processes, there are 15 total time slices, resulting in 14 context switches (one less than total slices)."
+    },
+    {
+      "question": "Process synchronization is essential in multiprocessor systems to avoid race conditions.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "In multiprocessor systems, multiple processes can truly execute in parallel on different cores, making synchronization essential to prevent race conditions on shared data."
+    },
+    {
+      "question": "What are common causes of deadlocks in an OS? (Select all that apply)",
+      "options": [
+        "Limited file storage",
+        "No preemption",
+        "Circular wait",
+        "Mutual exclusion"
+      ],
+      "correctAnswer": [1,2,3],
+      "explanation": "The four necessary conditions for deadlock are: mutual exclusion, hold and wait, no preemption, and circular wait. Options B, C, and D are three of these conditions. Limited file storage is not a direct cause."
+    },
+    {
+      "question": "The Banker's Algorithm is used for memory allocation in modern operating systems.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Banker's Algorithm is used for deadlock avoidance and resource allocation, not specifically for memory allocation in modern operating systems."
+    },
+    {
+      "question": "A request edge in a resource-allocation graph indicates a process is waiting for a resource.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A request edge (arrow from process to resource) in a resource-allocation graph indicates that the process has requested the resource and is waiting for it."
+    },
+    {
+      "question": "Deadlock prevention is more restrictive than deadlock avoidance.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Deadlock prevention uses restrictive techniques to eliminate one of the four necessary conditions, while deadlock avoidance allows more flexibility by analyzing resource allocation states."
+    },
+    {
+      "question": "In a producer-consumer problem, which synchronization method best ensures that the buffer does not overflow?",
+      "options": [
+        "Pipes",
+        "Shared memory",
+        "Signals",
+        "Semaphores"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Semaphores are ideal for the producer-consumer problem because they can track the number of empty and full slots in the buffer, preventing overflow and underflow."
+    },
+    {
+      "question": "The safest way to handle deadlocks is through prevention rather than detection and recovery.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Deadlock prevention is generally considered safer because it guarantees that deadlocks will never occur, whereas detection and recovery may have downtime."
+    },
+    {
+      "question": "Race conditions occur when the final outcome depends on the sequence or timing of execution of concurrent processes.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This is the definition of a race condition - the result depends on the unpredictable ordering or timing of concurrent process execution."
+    },
+    {
+      "question": "A spinlock is a type of mutex lock that uses busy waiting.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A spinlock continuously checks if a lock is available (busy waiting) rather than putting the process to sleep, which can be efficient on multiprocessor systems."
+    },
+    {
+      "question": "In the context of semaphores, the signal() operation always decrements the semaphore value.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The signal() operation increments the semaphore value, not decrements it. The wait() operation decrements the semaphore value."
+    },
+    {
+      "question": "Which of the following are benefits of using semaphores? (Select all that apply)",
+      "options": [
+        "Manages access to shared resources",
+        "Prevents all deadlocks automatically",
+        "Enables mutual exclusion",
+        "Allows process synchronization"
+      ],
+      "correctAnswer": [0,2,3],
+      "explanation": "Semaphores manage shared resources, enable mutual exclusion, and allow process synchronization. However, they do not prevent all deadlocks automatically; they must be used correctly."
+    },
+    {
+      "question": "In the dining philosophers problem, if each philosopher picks up their left chopstick first and then their right chopstick, deadlock can never occur.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If all philosophers pick up their left chopstick first, all will hold their left chopstick and wait for their right chopstick, creating a circular wait and deadlock."
+    },
+    {
+      "question": "What conditions must hold for a deadlock to occur? (Select all that apply)",
+      "options": [
+        "Preemption allowed",
+        "Circular wait",
+        "Hold and wait",
+        "Mutual exclusion"
+      ],
+      "correctAnswer": [1,2,3],
+      "explanation": "The four necessary and sufficient conditions for deadlock are mutual exclusion, hold and wait, no preemption, and circular wait. Preemption allowed is the opposite of a necessary condition."
+    },
+    {
+      "question": "Which conditions must be met for a system to be in a livelock state? (Select all that apply)",
+      "options": [
+        "Processes continuously change states without making progress",
+        "Processes avoid entering the waiting state",
+        "Preemption is disabled",
+        "CPU utilization remains high without meaningful execution"
+      ],
+      "correctAnswer": [0,3],
+      "explanation": "Livelock is characterized by processes that continuously change states without making progress and consume CPU resources in the process, resulting in high utilization with no meaningful work."
+    },
+    {
+      "question": "The convoy effect occurs in First-Come, First-Served scheduling when short processes get stuck behind a long one.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The convoy effect is when short processes must wait for a long process to complete, causing poor average waiting time in FCFS scheduling."
+    },
+    {
+      "question": "The time quantum in Round Robin should always be larger than the longest process burst time.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The time quantum should be chosen appropriately - not too large (to avoid FCFS behavior) or too small (to avoid excessive context switching). It doesn't need to be larger than the longest burst time."
+    },
+    {
+      "question": "Which scheduling algorithms can lead to starvation if not handled properly? (Select all that apply)",
+      "options": [
+        "Round Robin",
+        "Priority Scheduling",
+        "Shortest Job First",
+        "Multilevel Queue Scheduling"
+      ],
+      "correctAnswer": [1,2,3],
+      "explanation": "Priority Scheduling, Shortest Job First, and Multilevel Queue Scheduling can all lead to starvation of low-priority or long processes. Round Robin is fair and doesn't cause starvation."
+    },
+    {
+      "question": "When a group of CPU-time sharing processes arrive at the same time, the scheduling algorithms Shortest Job First and Shortest Remaining Time schedule processes in the same way.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "When all processes arrive simultaneously, Shortest Job First and Shortest Remaining Time produce the same schedule because there are no new arrivals to preempt running processes."
+    },
+    {
+      "question": "What is the main drawback of Shortest Job First (SJF) scheduling?",
+      "options": [
+        "Poor CPU utilization",
+        "High overhead",
+        "Starvation of long processes",
+        "High response time"
+      ],
+      "correctAnswer": 2,
+      "explanation": "SJF can cause starvation of long processes if short processes keep arriving, as the scheduler will always select short jobs over long ones."
+    },
+    {
+      "question": "Aging is necessary to:",
+      "options": [
+        "make a process older",
+        "used in First-Come-First-Serve (FCFS) scheduling algorithm only",
+        "prevent a low priority process from starving",
+        "to increase the priority of a running process"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Aging gradually increases the priority of waiting processes over time, preventing starvation of low-priority processes in priority scheduling."
+    },
+    {
+      "question": "In a system that schedules both interactive and batch processes together, which scheduling algorithm is most effective?",
+      "options": [
+        "FIFO (First-Come, First-Served)",
+        "MLFQ (Multilevel Feedback Queue)",
+        "Shortest Remaining Time First (SRTF)",
+        "SJF (Shortest Job First)"
+      ],
+      "correctAnswer": 1,
+      "explanation": "MLFQ is most effective for mixed workloads because it adapts to process behavior, giving interactive processes priority while handling batch processes efficiently."
+    },
+    {
+      "question": "Which scheduling algorithm is best for minimizing turnaround time in batch systems?",
+      "options": [
+        "Shortest Job First",
+        "Round Robin",
+        "Priority Scheduling",
+        "First-Come, First-Served"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Shortest Job First minimizes average turnaround time because it schedules shorter jobs first, reducing the overall completion time for the batch of processes."
+    },
+    {
+      "question": "Which of the following criteria is more important from the point of view of a particular process?",
+      "options": [
+        "Turnaround time",
+        "Response time",
+        "CPU utilization",
+        "Throughput"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Turnaround time (total time from submission to completion) is most important to individual processes, while CPU utilization and throughput are system-level metrics."
+    },
+    {
+      "question": "What is the function of a dispatcher in process scheduling?",
+      "options": [
+        "It selects which process to execute next",
+        "It allocates memory for new processes",
+        "It handles context switching and transfers CPU control to a selected process",
+        "It moves processes from the waiting queue to the ready queue"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The dispatcher performs the context switch - saving the state of the current process and loading the state of the next process to run."
+    },
+    {
+      "question": "In a preemptive scheduling algorithm, the currently running process can be interrupted and replaced by another.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This is the definition of preemptive scheduling - the OS can interrupt a running process and switch to another, unlike non-preemptive scheduling."
+    },
+    {
+      "question": "The multilevel feedback queue (MLFQ) scheduling algorithm allows processes to move between different priority queues.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "MLFQ is characterized by processes moving between queues based on their behavior and CPU usage, allowing adaptation to different process types."
+    },
+    {
+      "question": "The response time of a process in Round Robin depends on the time quantum size.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Smaller time quanta result in faster response times but increase context switching overhead. Larger time quanta reduce overhead but increase response time."
+    },
+    {
+      "question": "Thread scheduling is handled entirely at the application level in kernel-level threads.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Kernel-level threads are scheduled by the kernel, not at the application level. User-level threads are scheduled at the application level by the thread library."
+    },
+    {
+      "question": "Preemptive scheduling allows the operating system to forcibly switch between processes.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Preemptive scheduling means the OS can interrupt a running process and switch to another, giving the OS control over the scheduling decision."
+    },
+    {
+      "question": "A CPU-bound process requires more I/O operations than CPU processing time.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A CPU-bound process requires significant CPU processing time with minimal I/O. An I/O-bound process requires more I/O operations than CPU time."
+    },
+    {
+      "question": "Process scheduling ensures efficient CPU utilization by managing Input-Output devices.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Process scheduling primarily manages CPU allocation to processes. Managing I/O devices is a separate function of the operating system."
+    },
+    {
+      "question": "Which of the following is NOT a form of liveness failure in concurrent systems?",
+      "options": [
+        "Deadlock",
+        "Mutual exclusion",
+        "Livelock",
+        "Starvation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Mutual exclusion is a synchronization technique, not a liveness failure. Deadlock, livelock, and starvation are all forms of liveness failures."
+    },
+    {
+      "question": "The dining-philosophers problem is representative of situations where each process needs more than _____ resource(s) at a time.",
+      "options": [
+        "1",
+        "0",
+        "5",
+        "2"
+      ],
+      "correctAnswer": 0,
+      "explanation": "In the dining philosophers problem, each philosopher needs 2 chopsticks (more than 1) to eat, making it representative of processes needing multiple resources."
+    },
+    {
+      "question": "Race conditions can result in corrupted values of shared data.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Race conditions occur when multiple processes access shared data concurrently without synchronization, leading to inconsistent and corrupted data values."
+    },
+    {
+      "question": "In deadlock detection, what does a wait-for graph represent?",
+      "options": [
+        "Processes waiting for other processes to release resources",
+        "Processes waiting for CPU time",
+        "The sequence in which processes will execute",
+        "Resources waiting to be allocated"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A wait-for graph shows which processes are waiting for resources held by other processes, with an edge from process A to process B if A waits for B."
+    },
+    {
+      "question": "The requirement that only one process may execute in a Critical Section is called _____.",
+      "options": [
+        "mutual exclusion",
+        "lockout",
+        "starvation",
+        "deadlock"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Mutual exclusion is the principle that ensures only one process can be in the critical section at any given time."
+    },
+    {
+      "question": "In the Banker's algorithm, what condition must be satisfied for a state to be considered safe?",
+      "options": [
+        "No process can request additional resources",
+        "All resources must be fully utilized",
+        "There must exist a sequence in which processes can complete execution",
+        "All processes must have all their resources allocated"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A state is safe if there exists a sequence of processes that can complete execution without entering deadlock, allowing all resource requests to be satisfied."
+    },
+    {
+      "question": "In the bounded-buffer problem, what is the purpose of the 'full' semaphore?",
+      "options": [
+        "To block the producer when the buffer is full",
+        "To count the number of full buffer slots",
+        "To signal that the buffer is completely full",
+        "To track the total capacity of the buffer"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'full' semaphore counts the number of items (full slots) currently in the buffer, allowing the consumer to know when items are available."
+    },
+    {
+      "question": "In the dining philosophers problem, what would happen if each philosopher picked up the left chopstick first, then the right chopstick?",
+      "options": [
+        "The philosophers would experience starvation but not deadlock",
+        "Only one philosopher would be able to eat at a time",
+        "The system would work efficiently without issues",
+        "A deadlock could occur if all philosophers pick up their left chopstick simultaneously"
+      ],
+      "correctAnswer": 3,
+      "explanation": "If all philosophers pick up their left chopstick simultaneously, each holds one chopstick and waits for their right, creating a circular wait (deadlock)."
+    },
+    {
+      "question": "A race condition occurs when multiple threads access shared data without synchronization.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This is the definition of a race condition - concurrent access to shared data without proper synchronization leads to unpredictable results."
+    },
+    {
+      "question": "The safest way to handle deadlocks is through prevention rather than detection and recovery.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Prevention is considered safer because it guarantees deadlock never occurs, while detection and recovery incur overhead and potential system downtime."
+    },
+    {
+      "question": "Starvation occurs when a process is indefinitely denied necessary resources.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Starvation is when a process is perpetually denied resources it needs, often due to higher-priority processes continuously arriving or being scheduled."
+    },
+    {
+      "question": "The Banker's Algorithm is used to detect deadlocks in an operating system.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Banker's Algorithm is used for deadlock avoidance, not detection. It analyzes resource allocation states to prevent deadlock before it occurs."
+    },
+    {
+      "question": "In a resource allocation graph, a cycle always indicates a deadlock in systems with multiple instances of each resource type.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A cycle in a resource allocation graph guarantees deadlock only when there is one instance of each resource type. With multiple instances, a cycle is necessary but not sufficient."
+    },
+    {
+      "question": "A binary semaphore can have only two values: 0 and 1.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A binary semaphore can take only values 0 and 1, functioning similarly to a mutex lock for mutual exclusion."
+    },
+    {
+      "question": "Deadlock prevention techniques ensure that deadlocks never occur in the system.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Deadlock prevention works by eliminating one of the four necessary conditions for deadlock, guaranteeing that deadlock cannot occur."
+    },
+    {
+      "question": "When solving a bounded-buffer problem using semaphores, 'n' is the total number of buffer slots, 'f' is the number of full buffer slots, and 'e' is the number of empty buffer slots. Initially, _____.",
+      "options": [
+        "$f = n$ and $e = 0$",
+        "$f = n$ and $e = 1$",
+        "$f = 0$ and $e = 0$",
+        "$f = 0$ and $e = n$"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Initially, the buffer is empty, so there are 0 full slots and n empty slots. As the producer adds items, 'f' increases and 'e' decreases."
+    },
+    {
+      "question": "Which of the following is NOT true for Peterson's solution?",
+      "options": [
+        "Mutual exclusion is preserved",
+        "The bounded-waiting requirement is met",
+        "Peterson's solution works for synchronization among more than two processes",
+        "The progress requirement is satisfied"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Peterson's solution only works for two processes. It does satisfy mutual exclusion, progress, and bounded-waiting requirements, but cannot be extended beyond two processes."
+    },
+    {
+      "question": "When a process repeatedly executes a loop while waiting for a condition to change, CPU resources are wasted. This behavior is called _____.",
+      "options": [
+        "locking",
+        "test-and-set",
+        "busy-waiting",
+        "mutual exclusion"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Busy-waiting (also called spin-waiting) wastes CPU cycles by continuously checking a condition instead of putting the process to sleep until the condition is satisfied."
+    },
+    {
+      "question": "Which of the following indicates that a process can enter the critical section in Peterson's solution?",
+      "options": [
+        "$flag[j] == true$ and $turn == j$",
+        "$flag[j] == false$ or $turn == j$",
+        "$flag[j] == true$ or $turn == i$",
+        "$flag[j] == false$ or $turn == i$"
+      ],
+      "correctAnswer": 3,
+      "explanation": "In Peterson's solution, process i can enter the critical section if process j is not interested (flag[j] == false) OR if it is j's turn (turn == i)."
+    },
+    {
+      "question": "In the structure of the producer process, what would be a possible outcome if wait(empty) is replaced with signal(empty) and signal(full) is replaced with wait(full)?",
+      "options": [
+        "All of the above",
+        "Producer will remain blocked after adding an item in the buffer",
+        "Consumer will remain blocked after taking out an item from the buffer",
+        "Producer and consumer may access the buffer at the same time"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If these operations are reversed, the producer would increment the empty semaphore and decrement the full semaphore, causing the producer to block when trying to add items."
+    },
+    {
+      "question": "The banker's algorithm is useful in a system with multiple instances of each resource type.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The Banker's Algorithm can handle systems with multiple instances of each resource type, making it more practical for real systems than single-instance scenarios."
+    },
+    {
+      "question": "A process is _____ if one or more request edges directed from the process exist and a resource does not contain enough free units to satisfy all requests.",
+      "options": [
+        "safe",
+        "shared",
+        "blocked",
+        "deadlocked"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A process is blocked when it has requested resources but they are not available, so it cannot proceed until the resources are released by other processes."
+    },
+    {
+      "question": "A solution to the dining-philosophers problem where both forks must be picked up at the same time in a critical section prevents _____ but may lead to _____.",
+      "options": [
+        "starvation, a system crash",
+        "starvation, deadlock",
+        "a system crash, deadlock",
+        "deadlock, starvation"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Using a critical section to pick up both forks atomically prevents deadlock (since no circular wait can form), but can lead to starvation if some philosophers are continuously denied entry to the critical section."
+    }
+  ]
+}
