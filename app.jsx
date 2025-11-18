@@ -33,47 +33,154 @@ function App() {
     const [selectedModel, setSelectedModel] = useState('claude-haiku-4-5-20251001');
     const [isLoadingModels, setIsLoadingModels] = useState(false);
     
+    // Question sets management
+    const [questionSets, setQuestionSets] = useState({}); // { setId: { name, questions: [] } }
+    const [currentSetId, setCurrentSetId] = useState(null);
+    const [newSetName, setNewSetName] = useState('');
+    const [showSetManager, setShowSetManager] = useState(false);
+    const [editingSetId, setEditingSetId] = useState(null);
+    const [editingSetName, setEditingSetName] = useState('');
+    
     // API proxy URL - defaults to local proxy server
     const API_BASE_URL = 'http://localhost:3001/api/anthropic';
 
     // Load saved data from localStorage
     useEffect(() => {
         const savedApiKey = localStorage.getItem('claudeApiKey');
-        const savedQuestions = localStorage.getItem('questions');
-        const savedManualQuestions = localStorage.getItem('manualQuestions');
         const savedModel = localStorage.getItem('selectedModel');
+        const savedQuestionSets = localStorage.getItem('questionSets');
+        const savedCurrentSetId = localStorage.getItem('currentSetId');
         
         if (savedApiKey) setApiKey(savedApiKey);
-        if (savedQuestions) {
-            try {
-                const parsed = JSON.parse(savedQuestions);
-                if (Array.isArray(parsed)) setQuestions(parsed);
-            } catch (e) {
-                console.error('Error parsing saved questions:', e);
-            }
-        }
-        if (savedManualQuestions) {
-            try {
-                const parsed = JSON.parse(savedManualQuestions);
-                if (Array.isArray(parsed)) setSavedManualQuestions(parsed);
-            } catch (e) {
-                console.error('Error parsing saved manual questions:', e);
-            }
-        }
         if (savedModel) setSelectedModel(savedModel);
+        
+        // Load question sets
+        if (savedQuestionSets) {
+            try {
+                const parsed = JSON.parse(savedQuestionSets);
+                setQuestionSets(parsed);
+                
+                // Migrate old data if it exists
+                const savedQuestions = localStorage.getItem('questions');
+                const savedManualQuestions = localStorage.getItem('manualQuestions');
+                
+                if (savedQuestions || savedManualQuestions) {
+                    // Create a default set from old data
+                    const defaultSetId = 'default-' + Date.now();
+                    const oldQuestions = savedQuestions ? JSON.parse(savedQuestions) : [];
+                    const oldManualQuestions = savedManualQuestions ? JSON.parse(savedManualQuestions) : [];
+                    
+                    parsed[defaultSetId] = {
+                        name: 'Default Set',
+                        questions: oldManualQuestions.length > 0 ? oldManualQuestions : oldQuestions,
+                        createdAt: Date.now()
+                    };
+                    
+                    setQuestionSets(parsed);
+                    setCurrentSetId(defaultSetId);
+                    localStorage.setItem('questionSets', JSON.stringify(parsed));
+                    localStorage.setItem('currentSetId', defaultSetId);
+                    
+                    // Clear old data
+                    localStorage.removeItem('questions');
+                    localStorage.removeItem('manualQuestions');
+                } else if (savedCurrentSetId && parsed[savedCurrentSetId]) {
+                    setCurrentSetId(savedCurrentSetId);
+                } else if (Object.keys(parsed).length > 0) {
+                    // Use first available set
+                    const firstSetId = Object.keys(parsed)[0];
+                    setCurrentSetId(firstSetId);
+                }
+            } catch (e) {
+                console.error('Error parsing saved question sets:', e);
+            }
+        } else {
+            // Migrate old data if no sets exist
+            const savedQuestions = localStorage.getItem('questions');
+            const savedManualQuestions = localStorage.getItem('manualQuestions');
+            
+            if (savedQuestions || savedManualQuestions) {
+                const defaultSetId = 'default-' + Date.now();
+                const oldQuestions = savedQuestions ? JSON.parse(savedQuestions) : [];
+                const oldManualQuestions = savedManualQuestions ? JSON.parse(savedManualQuestions) : [];
+                
+                const newSets = {
+                    [defaultSetId]: {
+                        name: 'Default Set',
+                        questions: oldManualQuestions.length > 0 ? oldManualQuestions : oldQuestions,
+                        createdAt: Date.now()
+                    }
+                };
+                
+                setQuestionSets(newSets);
+                setCurrentSetId(defaultSetId);
+                localStorage.setItem('questionSets', JSON.stringify(newSets));
+                localStorage.setItem('currentSetId', defaultSetId);
+                
+                // Clear old data
+                localStorage.removeItem('questions');
+                localStorage.removeItem('manualQuestions');
+            }
+        }
     }, []);
 
-    // Save questions to localStorage
+    // Save question sets to localStorage
     useEffect(() => {
-        // Always save to localStorage, even if empty, to ensure deletions persist
-        localStorage.setItem('questions', JSON.stringify(questions));
-    }, [questions]);
+        if (Object.keys(questionSets).length > 0) {
+            localStorage.setItem('questionSets', JSON.stringify(questionSets));
+        }
+    }, [questionSets]);
 
-    // Save manual questions to localStorage
+    // Save current set ID to localStorage
     useEffect(() => {
-        // Always save to localStorage, even if empty, to ensure deletions persist
-        localStorage.setItem('manualQuestions', JSON.stringify(savedManualQuestions));
-    }, [savedManualQuestions]);
+        if (currentSetId) {
+            localStorage.setItem('currentSetId', currentSetId);
+        }
+    }, [currentSetId]);
+
+    // Update current set's questions when savedManualQuestions changes
+    // Use a ref to track if we're loading to prevent circular updates
+    const isLoadingSetRef = React.useRef(false);
+    
+    useEffect(() => {
+        if (currentSetId && questionSets[currentSetId] && !isLoadingSetRef.current) {
+            const currentSetQuestions = questionSets[currentSetId].questions || [];
+            // Only update if questions actually changed
+            if (JSON.stringify(currentSetQuestions) !== JSON.stringify(savedManualQuestions)) {
+                setQuestionSets(prev => {
+                    if (prev[currentSetId]) {
+                        return {
+                            ...prev,
+                            [currentSetId]: {
+                                ...prev[currentSetId],
+                                questions: savedManualQuestions
+                            }
+                        };
+                    }
+                    return prev;
+                });
+            }
+        }
+    }, [savedManualQuestions, currentSetId]);
+
+    // Load questions from current set when it changes
+    useEffect(() => {
+        if (currentSetId && questionSets[currentSetId]) {
+            isLoadingSetRef.current = true;
+            const setQuestions = questionSets[currentSetId].questions || [];
+            setSavedManualQuestions(setQuestions);
+            // Reset flag after state update
+            setTimeout(() => {
+                isLoadingSetRef.current = false;
+            }, 0);
+        } else if (!currentSetId) {
+            isLoadingSetRef.current = true;
+            setSavedManualQuestions([]);
+            setTimeout(() => {
+                isLoadingSetRef.current = false;
+            }, 0);
+        }
+    }, [currentSetId, questionSets]);
 
     // Reset selections when question index changes
     useEffect(() => {
@@ -95,6 +202,126 @@ function App() {
         alert('API key saved!');
     };
 
+    // Question set management functions
+    const createQuestionSet = () => {
+        if (!newSetName.trim()) {
+            setError('Please enter a name for the question set');
+            return;
+        }
+        
+        const setId = 'set-' + Date.now();
+        const newSet = {
+            name: newSetName.trim(),
+            questions: [],
+            createdAt: Date.now()
+        };
+        
+        setQuestionSets(prev => ({
+            ...prev,
+            [setId]: newSet
+        }));
+        
+        // Clear savedManualQuestions before switching to new set
+        setSavedManualQuestions([]);
+        setCurrentSetId(setId);
+        setNewSetName('');
+        setError('');
+    };
+
+    const selectQuestionSet = (setId) => {
+        if (questionSets[setId]) {
+            // Set loading flag to prevent save effect from running
+            isLoadingSetRef.current = true;
+            
+            // Get the new set's questions before switching
+            const newSetQuestions = questionSets[setId].questions || [];
+            
+            // Switch to new set and load its questions directly
+            setCurrentSetId(setId);
+            setSavedManualQuestions(newSetQuestions);
+            
+            // Reset loading flag after a brief delay
+            setTimeout(() => {
+                isLoadingSetRef.current = false;
+            }, 100);
+            
+            setShowSetManager(false);
+            setError('');
+        }
+    };
+
+    const renameQuestionSet = (setId) => {
+        if (!editingSetName.trim()) {
+            setError('Please enter a name for the question set');
+            return;
+        }
+        
+        setQuestionSets(prev => ({
+            ...prev,
+            [setId]: {
+                ...prev[setId],
+                name: editingSetName.trim()
+            }
+        }));
+        
+        setEditingSetId(null);
+        setEditingSetName('');
+        setError('');
+    };
+
+    const deleteQuestionSet = (setId) => {
+        if (Object.keys(questionSets).length === 1) {
+            setError('Cannot delete the last question set');
+            return;
+        }
+        
+        if (confirm(`Are you sure you want to delete "${questionSets[setId]?.name}"? This cannot be undone.`)) {
+            const isDeletingCurrentSet = currentSetId === setId;
+            const remainingSets = Object.keys(questionSets).filter(id => id !== setId);
+            
+            if (isDeletingCurrentSet) {
+                // Set loading flag to prevent save effect from running
+                isLoadingSetRef.current = true;
+                
+                // Get the new set's questions before deleting
+                const newSetId = remainingSets.length > 0 ? remainingSets[0] : null;
+                const newSetQuestions = newSetId && questionSets[newSetId] 
+                    ? (questionSets[newSetId].questions || [])
+                    : [];
+                
+                // Delete the set
+                setQuestionSets(prev => {
+                    const newSets = { ...prev };
+                    delete newSets[setId];
+                    return newSets;
+                });
+                
+                // Switch to new set and load its questions directly
+                if (newSetId) {
+                    setCurrentSetId(newSetId);
+                    setSavedManualQuestions(newSetQuestions);
+                } else {
+                    setCurrentSetId(null);
+                    setSavedManualQuestions([]);
+                }
+                
+                // Reset loading flag after a brief delay
+                setTimeout(() => {
+                    isLoadingSetRef.current = false;
+                }, 100);
+            } else {
+                // If not deleting current set, just delete it
+                setQuestionSets(prev => {
+                    const newSets = { ...prev };
+                    delete newSets[setId];
+                    return newSets;
+                });
+            }
+            
+            setError('');
+        }
+    };
+
     const generateQuestions = async () => {
         if (!apiKey) {
             setError('Please enter your Claude API key first');
@@ -102,6 +329,10 @@ function App() {
         }
         if (!inputText.trim()) {
             setError('Please enter some study material');
+            return;
+        }
+        if (!currentSetId) {
+            setError('Please select or create a question set first');
             return;
         }
 
@@ -135,13 +366,13 @@ Respond ONLY with valid JSON in this exact format (no other text):
     {
       "question": "Question text here?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": 0,
+      "correctAnswer": 0, 
       "explanation": "Explanation here"
     }
   ]
 }
 
-The correctAnswer should be the index (0-3) of the correct option in the options array.`
+The correctAnswer should be the index (0-3) for single answer questions, or array of indices (0-3): "correctAnswer":[0, 1, 2, 3], for multi-answer questions, where 0, 1, 2, 3 are the indices of the correct options in the options array for multi-answer questions.`
                     }]
                 })
             });
@@ -179,7 +410,20 @@ The correctAnswer should be the index (0-3) of the correct option in the options
             }
             
             if (parsedData.questions && parsedData.questions.length > 0) {
-                setQuestions(parsedData.questions);
+                // Add IDs to generated questions
+                const questionsWithIds = parsedData.questions.map((q, idx) => ({
+                    ...q,
+                    id: q.id || Date.now().toString() + idx + Math.random().toString(36).substr(2, 9)
+                }));
+                
+                // If there's a current set, add questions to it
+                if (currentSetId && questionSets[currentSetId]) {
+                    setSavedManualQuestions(prev => [...prev, ...questionsWithIds]);
+                } else {
+                    // Otherwise, use temporary questions for practice
+                    setQuestions(questionsWithIds);
+                }
+                
                 setCurrentView('practice');
                 setCurrentQuestionIndex(0);
                 setScore({ correct: 0, total: 0 });
@@ -430,6 +674,10 @@ The correctAnswer should be the index (0-3) of the correct option in the options
     };
 
     const saveManualQuestion = () => {
+        if (!currentSetId) {
+            setError('Please select or create a question set first');
+            return;
+        }
         if (!manualQuestion.question.trim()) {
             setError('Please enter a question');
             return;
@@ -489,6 +737,11 @@ The correctAnswer should be the index (0-3) of the correct option in the options
             return;
         }
 
+        const setName = currentSetId && questionSets[currentSetId] 
+            ? questionSets[currentSetId].name 
+            : 'questions';
+        const sanitizedName = setName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+
         const exportData = {
             version: '1.0',
             exportDate: new Date().toISOString(),
@@ -501,7 +754,37 @@ The correctAnswer should be the index (0-3) of the correct option in the options
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `multichoice-questions-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `${sanitizedName}-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setError('');
+    };
+
+    // Export a specific question set
+    const exportQuestionSet = (setId) => {
+        const set = questionSets[setId];
+        if (!set || !set.questions || set.questions.length === 0) {
+            setError('No questions to export in this set');
+            return;
+        }
+
+        const sanitizedName = set.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+
+        const exportData = {
+            version: '1.0',
+            exportDate: new Date().toISOString(),
+            questionCount: set.questions.length,
+            questions: set.questions
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${sanitizedName}-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -534,6 +817,21 @@ The correctAnswer should be the index (0-3) of the correct option in the options
                 if (questionsToImport.length === 0) {
                     setError('No questions found in file');
                     return;
+                }
+
+                // Create a set if none exists
+                if (!currentSetId) {
+                    const defaultSetId = 'set-' + Date.now();
+                    const defaultSet = {
+                        name: 'Imported Set',
+                        questions: [],
+                        createdAt: Date.now()
+                    };
+                    setQuestionSets(prev => ({
+                        ...prev,
+                        [defaultSetId]: defaultSet
+                    }));
+                    setCurrentSetId(defaultSetId);
                 }
 
                 if (replaceMode) {
@@ -915,6 +1213,162 @@ Order questions so that:
                         <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Multiple Choice Practice</h1>
                         <p className="text-gray-600 mb-6">Transform any study material into practice questions</p>
                         
+                        {/* Question Set Management */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Question Sets
+                            </label>
+                            
+                            <div className="space-y-3">
+                                {/* Create new set */}
+                                <div className="flex gap-2 mb-3">
+                                    <input
+                                        type="text"
+                                        value={newSetName}
+                                        onChange={(e) => setNewSetName(e.target.value)}
+                                        placeholder="New set name..."
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
+                                    />
+                                    <button
+                                        onClick={createQuestionSet}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                    >
+                                        Create Set
+                                    </button>
+                                </div>
+                                
+                                {/* List of sets */}
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {Object.entries(questionSets).map(([setId, set]) => (
+                                        <div
+                                            key={setId}
+                                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                                                currentSetId === setId
+                                                    ? 'bg-blue-50 border-blue-300'
+                                                    : 'bg-white border-gray-200'
+                                            }`}
+                                        >
+                                            <div className="flex-1">
+                                                {editingSetId === setId ? (
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={editingSetName}
+                                                            onChange={(e) => setEditingSetName(e.target.value)}
+                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                            onKeyPress={(e) => e.key === 'Enter' && renameQuestionSet(setId)}
+                                                        />
+                                                        <button
+                                                            onClick={() => renameQuestionSet(setId)}
+                                                            className="text-green-600 hover:text-green-800 text-sm px-2"
+                                                        >
+                                                            ✓
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingSetId(null);
+                                                                setEditingSetName('');
+                                                            }}
+                                                            className="text-gray-600 hover:text-gray-800 text-sm px-2"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => selectQuestionSet(setId)}
+                                                            className="text-left flex-1 text-sm font-medium text-gray-800 hover:text-blue-600"
+                                                        >
+                                                            {set.name} ({set.questions?.length || 0} questions)
+                                                        </button>
+                                                        <label 
+                                                            className="bg-orange-600 text-white py-1 px-2 rounded text-xs cursor-pointer hover:bg-orange-700 transition"
+                                                            onClick={() => {
+                                                                // Select this set before importing
+                                                                if (currentSetId !== setId) {
+                                                                    selectQuestionSet(setId);
+                                                                }
+                                                            }}
+                                                        >
+                                                            📤 Import
+                                                            <input
+                                                                type="file"
+                                                                accept=".json"
+                                                                onChange={importQuestions}
+                                                                className="hidden"
+                                                            />
+                                                        </label>
+                                                        <button
+                                                            onClick={() => exportQuestionSet(setId)}
+                                                            disabled={!set.questions || set.questions.length === 0}
+                                                            className="bg-teal-600 text-white py-1 px-2 rounded text-xs hover:bg-teal-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                        >
+                                                            📥 Export
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {editingSetId !== setId && (
+                                                <div className="flex gap-1 ml-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingSetId(setId);
+                                                            setEditingSetName(set.name);
+                                                        }}
+                                                        className="text-blue-600 hover:text-blue-800 text-sm px-2"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteQuestionSet(setId)}
+                                                        className="text-red-600 hover:text-red-800 text-sm px-2"
+                                                        disabled={Object.keys(questionSets).length === 1}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {Object.keys(questionSets).length === 0 && (
+                                    <div className="text-sm text-gray-500 text-center py-4">
+                                        No question sets yet. Create one to get started!
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Practice button - below the list */}
+                            {currentSetId && questionSets[currentSetId] && (questionSets[currentSetId].questions?.length || 0) > 0 && (
+                                <div className="mt-4 pt-3 border-t">
+                                    <button
+                                        onClick={() => {
+                                            setReviewMode(false);
+                                            setPracticeOrder([]);
+                                            setQuestionResults({});
+                                            setCurrentView('practice');
+                                            setCurrentQuestionIndex(0);
+                                            setScore({ correct: 0, total: 0 });
+                                        }}
+                                        className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition font-semibold"
+                                    >
+                                        Practice Questions ({questionSets[currentSetId].questions?.length || 0})
+                                    </button>
+                                    {getIncorrectQuestions().length > 0 && (
+                                        <button
+                                            onClick={startIncorrectReview}
+                                            className="w-full mt-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition font-semibold"
+                                        >
+                                            🔴 Review Incorrect Questions ({getIncorrectQuestions().length})
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Claude API Key
@@ -955,137 +1409,12 @@ Order questions so that:
                         >
                             Manually Add Questions
                         </button>
-
-                        {/* Always show import/export section */}
-                        <div className="space-y-2 mt-4 border-t pt-4">
-                            {(savedManualQuestions.length > 0 || questions.length > 0) && (
-                                <div className="text-sm font-semibold text-gray-700 mb-2">
-                                    Your Question Bank: {savedManualQuestions.length} manual questions
-                                    {questions.length > 0 && `, ${questions.length} AI-generated questions`}
-                                </div>
-                            )}
-                            
-                            {/* Import/Export buttons - always visible */}
-                            <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b">
-                                {savedManualQuestions.length > 0 || questions.length > 0 ? (
-                                    <button
-                                        onClick={() => {
-                                            // Export manual questions if available, otherwise AI-generated
-                                            const questionsToExport = savedManualQuestions.length > 0 ? savedManualQuestions : questions;
-                                            if (questionsToExport.length === 0) {
-                                                setError('No questions to export');
-                                                return;
-                                            }
-                                            const exportData = {
-                                                version: '1.0',
-                                                exportDate: new Date().toISOString(),
-                                                questionCount: questionsToExport.length,
-                                                questions: questionsToExport
-                                            };
-                                            const dataStr = JSON.stringify(exportData, null, 2);
-                                            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                                            const url = URL.createObjectURL(dataBlob);
-                                            const link = document.createElement('a');
-                                            link.href = url;
-                                            link.download = `multichoice-questions-${new Date().toISOString().split('T')[0]}.json`;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                            URL.revokeObjectURL(url);
-                                            setError('');
-                                        }}
-                                        className="bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition text-sm"
-                                    >
-                                        📥 Export All Questions
-                                    </button>
-                                ) : (
-                                    <div className="bg-gray-300 text-gray-600 py-2 px-4 rounded-lg text-sm text-center">
-                                        📥 Export (no questions)
-                                    </div>
-                                )}
-                                <label className="bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition text-sm text-center cursor-pointer">
-                                    📤 Import Questions
-                                    <input
-                                        type="file"
-                                        accept=".json"
-                                        onChange={importQuestions}
-                                        className="hidden"
-                                    />
-                                </label>
+                        
+                        {/* Error display - always visible */}
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
+                                {error}
                             </div>
-                            
-                            {/* Replace All and Clear All - always visible */}
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                                <label className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition text-sm text-center cursor-pointer">
-                                    🔄 Replace All & Import
-                                    <input
-                                        type="file"
-                                        accept=".json"
-                                        onChange={(e) => importQuestions(e, true)}
-                                        className="hidden"
-                                    />
-                                </label>
-                                <button
-                                    onClick={clearAllQuestions}
-                                    disabled={savedManualQuestions.length === 0 && questions.length === 0}
-                                    className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                >
-                                    🗑️ Clear All Questions
-                                </button>
-                            </div>
-
-                            {/* Practice buttons - only show when there are questions */}
-                            {(savedManualQuestions.length > 0 || questions.length > 0) && (
-                                <>
-                                    <button
-                                        onClick={orderQuestionsForPractice}
-                                        disabled={!apiKey || isOrdering}
-                                        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                    >
-                                        {isOrdering ? 'Ordering Questions...' : `Practice with AI Ordering (${savedManualQuestions.length})`}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setReviewMode(false);
-                                            setPracticeOrder([]);
-                                            setQuestionResults({});
-                                            setCurrentView('practice');
-                                            setCurrentQuestionIndex(0);
-                                            setScore({ correct: 0, total: 0 });
-                                        }}
-                                        className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition"
-                                    >
-                                        Practice in Original Order ({savedManualQuestions.length})
-                                    </button>
-                                    {getIncorrectQuestions().length > 0 && (
-                                        <button
-                                            onClick={startIncorrectReview}
-                                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition font-semibold"
-                                        >
-                                            🔴 Review Incorrect Questions ({getIncorrectQuestions().length})
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                            
-                            {/* Error display - always visible */}
-                            {error && (
-                                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm">
-                                    {error}
-                                </div>
-                            )}
-                        </div>
-
-                        {questions.length > 0 && (
-                            <button
-                                onClick={() => {
-                                    setCurrentView('practice');
-                                    setPracticeOrder([]);
-                                }}
-                                className="w-full mt-3 bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition"
-                            >
-                                Practice AI-Generated Questions ({questions.length})
-                            </button>
                         )}
                     </div>
                 </div>
@@ -1111,6 +1440,62 @@ Order questions so that:
                             Paste your notes, textbook content, or any material you want to study. The AI will convert it into multiple choice questions.
                         </p>
 
+                        {/* Set Selector */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Select or Create Question Set
+                            </label>
+                            
+                            {/* Create new set */}
+                            <div className="flex gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    value={newSetName}
+                                    onChange={(e) => setNewSetName(e.target.value)}
+                                    placeholder="New set name..."
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
+                                />
+                                <button
+                                    onClick={createQuestionSet}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                >
+                                    Create Set
+                                </button>
+                            </div>
+                            
+                            {/* Select existing set */}
+                            {Object.keys(questionSets).length > 0 && (
+                                <div className="mt-3">
+                                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                                        Or select existing set:
+                                    </label>
+                                    <select
+                                        value={currentSetId || ''}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                selectQuestionSet(e.target.value);
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    >
+                                        <option value="">-- Select a set --</option>
+                                        {Object.entries(questionSets).map(([setId, set]) => (
+                                            <option key={setId} value={setId}>
+                                                {set.name} ({set.questions?.length || 0} questions)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            
+                            {currentSetId && questionSets[currentSetId] && (
+                                <div className="mt-3 text-sm font-semibold text-blue-700">
+                                    ✓ Selected: {questionSets[currentSetId].name}
+                                </div>
+                            )}
+                        </div>
+
                         <textarea
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
@@ -1126,11 +1511,16 @@ Order questions so that:
 
                         <button
                             onClick={generateQuestions}
-                            disabled={isGenerating || !inputText.trim()}
+                            disabled={isGenerating || !inputText.trim() || !currentSetId}
                             className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
                         >
                             {isGenerating ? 'Generating Questions...' : 'Generate Multiple Choice Questions'}
                         </button>
+                        {!currentSetId && (
+                            <p className="text-sm text-red-600 mt-2 text-center">
+                                Please select or create a question set first
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -1151,6 +1541,62 @@ Order questions so that:
                         </button>
 
                         <h2 className="text-2xl font-bold text-gray-800 mb-6">Add Question Manually</h2>
+
+                        {/* Set Selector */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Select or Create Question Set
+                            </label>
+                            
+                            {/* Create new set */}
+                            <div className="flex gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    value={newSetName}
+                                    onChange={(e) => setNewSetName(e.target.value)}
+                                    placeholder="New set name..."
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
+                                />
+                                <button
+                                    onClick={createQuestionSet}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                >
+                                    Create Set
+                                </button>
+                            </div>
+                            
+                            {/* Select existing set */}
+                            {Object.keys(questionSets).length > 0 && (
+                                <div className="mt-3">
+                                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                                        Or select existing set:
+                                    </label>
+                                    <select
+                                        value={currentSetId || ''}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                selectQuestionSet(e.target.value);
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    >
+                                        <option value="">-- Select a set --</option>
+                                        {Object.entries(questionSets).map(([setId, set]) => (
+                                            <option key={setId} value={setId}>
+                                                {set.name} ({set.questions?.length || 0} questions)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            
+                            {currentSetId && questionSets[currentSetId] && (
+                                <div className="mt-3 text-sm font-semibold text-blue-700">
+                                    ✓ Selected: {questionSets[currentSetId].name}
+                                </div>
+                            )}
+                        </div>
 
                         {error && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -1260,10 +1706,16 @@ Order questions so that:
 
                         <button
                             onClick={saveManualQuestion}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold mb-4"
+                            disabled={!currentSetId}
+                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold mb-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             Save Question
                         </button>
+                        {!currentSetId && (
+                            <p className="text-sm text-red-600 mb-4 text-center">
+                                Please select or create a question set first
+                            </p>
+                        )}
 
                         {savedManualQuestions.length > 0 && (
                             <div className="mt-8 border-t pt-6">
@@ -1655,25 +2107,14 @@ Order questions so that:
                                     🔴 Continue Reviewing Incorrect ({incorrectCount})
                                 </button>
                             )}
-                            {savedManualQuestions.length > 0 && practiceOrder.length > 0 && !wasReviewMode ? (
-                                <button
-                                    onClick={() => {
-                                        setScore({ correct: 0, total: 0 });
-                                        orderQuestionsForPractice();
-                                    }}
-                                    disabled={isOrdering || !apiKey}
-                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                >
-                                    {isOrdering ? 'Ordering Questions...' : 'Practice Again (Re-ordered)'}
-                                </button>
-                            ) : !wasReviewMode ? (
+                            {!wasReviewMode && (
                                 <button
                                     onClick={restartPractice}
                                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold"
                                 >
                                     Practice Again
                                 </button>
-                            ) : null}
+                            )}
                             <button
                                 onClick={startNewSet}
                                 className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold"

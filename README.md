@@ -1,5 +1,8 @@
 # MultiChoice - AI-Powered Study Practice App
 
+npm start
+open index.html
+
 A single-page web application for creating and practicing multiple choice questions with AI-powered spaced repetition ordering. Practice your questions repeatedly with intelligent ordering based on your performance history.
 
 ## Features
