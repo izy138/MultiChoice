@@ -3,4 +3,8 @@ node_modules/
 *.log
 .DS_Store
 
+# Deployment and test files
+DEPLOYMENT.md
+os-test-3-*.json
+test 2.json
 

@@ -24,7 +24,6 @@ function App() {
     const [savedManualQuestions, setSavedManualQuestions] = useState([]);
     const [practiceOrder, setPracticeOrder] = useState([]);
     const [isOrdering, setIsOrdering] = useState(false);
-    const [reviewMode, setReviewMode] = useState(false); // false = all questions, true = only incorrect
     const [questionResults, setQuestionResults] = useState({}); // Track which questions were answered correctly/incorrectly
     const [showSidebar, setShowSidebar] = useState(true); // Toggle sidebar visibility
     
@@ -41,8 +40,74 @@ function App() {
     const [editingSetId, setEditingSetId] = useState(null);
     const [editingSetName, setEditingSetName] = useState('');
     
+    // API key modal state
+    const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+    
     // API proxy URL - defaults to local proxy server
     const API_BASE_URL = 'http://localhost:3001/api/anthropic';
+
+    // Helper function to load questions from JSON file (URL or local file)
+    const loadQuestionsFromJSON = async (urlOrPath) => {
+        try {
+            // If it's a full URL, fetch it. Otherwise, treat as relative path
+            const url = urlOrPath.startsWith('http') ? urlOrPath : urlOrPath;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to load: ${response.statusText}`);
+            }
+            const data = await response.json();
+            
+            // Handle different import formats
+            let questionsToImport = [];
+            if (Array.isArray(data)) {
+                questionsToImport = data;
+            } else if (data.questions && Array.isArray(data.questions)) {
+                questionsToImport = data.questions;
+            } else {
+                throw new Error('Invalid file format');
+            }
+
+            if (questionsToImport.length === 0) {
+                throw new Error('No questions found in file');
+            }
+
+            // Ensure all imported questions have IDs
+            const questionsWithIds = questionsToImport.map((q, index) => ({
+                ...q,
+                id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
+            }));
+
+            // Create or update a question set using functional updates
+            setQuestionSets(prev => {
+                // Find existing set ID or create new one
+                const existingSetIds = Object.keys(prev);
+                const setId = existingSetIds.length > 0 ? existingSetIds[0] : 'set-' + Date.now();
+                const newSet = {
+                    name: prev[setId]?.name || 'Imported Set',
+                    questions: questionsWithIds,
+                    createdAt: prev[setId]?.createdAt || Date.now()
+                };
+                
+                // Update currentSetId if we created a new set
+                if (!existingSetIds.includes(setId)) {
+                    setTimeout(() => setCurrentSetId(setId), 0);
+                }
+                
+                return {
+                    ...prev,
+                    [setId]: newSet
+                };
+            });
+
+            setSavedManualQuestions(questionsWithIds);
+            setError('');
+            return true;
+        } catch (error) {
+            console.error('Error loading questions from JSON:', error);
+            setError(`Failed to load questions: ${error.message}`);
+            return false;
+        }
+    };
 
     // Load saved data from localStorage
     useEffect(() => {
@@ -53,6 +118,22 @@ function App() {
         
         if (savedApiKey) setApiKey(savedApiKey);
         if (savedModel) setSelectedModel(savedModel);
+        
+        // Check for URL parameters to auto-load JSON file
+        const urlParams = new URLSearchParams(window.location.search);
+        const loadParam = urlParams.get('load'); // ?load=filename.json or ?load=https://example.com/file.json
+        
+        if (loadParam) {
+            // Determine if it's a URL or a relative path
+            const jsonPath = loadParam.startsWith('http') 
+                ? loadParam 
+                : loadParam; // Will be resolved relative to current page
+            
+            loadQuestionsFromJSON(jsonPath).then(() => {
+                // Navigate to practice view after loading
+                setCurrentView('practice');
+            });
+        }
         
         // Load question sets
         if (savedQuestionSets) {
@@ -162,6 +243,32 @@ function App() {
             }
         }
     }, [savedManualQuestions, currentSetId]);
+
+    // Load questionResults from localStorage when currentSetId changes
+    useEffect(() => {
+        if (currentSetId) {
+            const savedResults = localStorage.getItem(`questionResults-${currentSetId}`);
+            if (savedResults) {
+                try {
+                    const parsed = JSON.parse(savedResults);
+                    setQuestionResults(parsed);
+                } catch (e) {
+                    console.error('Error parsing saved question results:', e);
+                }
+            } else {
+                setQuestionResults({});
+            }
+        } else {
+            setQuestionResults({});
+        }
+    }, [currentSetId]);
+
+    // Save questionResults to localStorage when it changes
+    useEffect(() => {
+        if (currentSetId && Object.keys(questionResults).length > 0) {
+            localStorage.setItem(`questionResults-${currentSetId}`, JSON.stringify(questionResults));
+        }
+    }, [questionResults, currentSetId]);
 
     // Load questions from current set when it changes
     useEffect(() => {
@@ -494,15 +601,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
 
     // Helper function to get current questions
     const getCurrentQuestions = () => {
-        // If in review mode, only show incorrect questions
-        if (reviewMode) {
-            const incorrectQuestions = getIncorrectQuestions();
-            return practiceOrder.length > 0 ? 
-                incorrectQuestions.filter(q => practiceOrder.includes(q.id)) :
-                incorrectQuestions;
-        }
-        
-        // Normal mode - all questions
         if (savedManualQuestions.length > 0 && (practiceOrder.length > 0 || questions.length === 0)) {
             return practiceOrder.length > 0 ? getOrderedQuestions() : savedManualQuestions;
         }
@@ -583,14 +681,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
             setCurrentQuestionIndex(prev => prev + 1);
             setShowAnswer(false);
         } else {
-            // If in review mode and all incorrect questions completed, check if there are any left
-            if (reviewMode) {
-                const remainingIncorrect = getIncorrectQuestions();
-                if (remainingIncorrect.length === 0) {
-                    // All incorrect questions have been answered correctly!
-                    setReviewMode(false);
-                }
-            }
             setCurrentView('results');
         }
     };
@@ -603,13 +693,7 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
         setScore({ correct: 0, total: 0 });
         setPracticeOrder([]);
         setQuestionResults({}); // Reset question results
-        // Keep review mode if it was active
-        if (reviewMode && getIncorrectQuestions().length === 0) {
-            setReviewMode(false); // Exit review mode if no more incorrect questions
-            setCurrentView('setup');
-        } else {
-            setCurrentView('practice');
-        }
+        setCurrentView('practice');
     };
 
     // Jump to specific question
@@ -1185,33 +1269,26 @@ Order questions so that:
     };
 
     // Get questions that need review (incorrectly answered)
-    const getIncorrectQuestions = () => {
-        return savedManualQuestions.filter(q => q.needsReview === true);
-    };
-
-    // Start practice with only incorrect questions
-    const startIncorrectReview = () => {
-        const incorrectQuestions = getIncorrectQuestions();
-        if (incorrectQuestions.length === 0) {
-            setError('No incorrect questions to review! Great job! 🎉');
-            return;
-        }
-        setReviewMode(true);
-        setPracticeOrder([]);
-        setQuestionResults({}); // Reset question results
-        setCurrentView('practice');
-        setCurrentQuestionIndex(0);
-        setScore({ correct: 0, total: 0 });
-    };
 
     // Setup View
     if (currentView === 'setup') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-xl p-8">
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Multiple Choice Practice</h1>
-                        <p className="text-gray-600 mb-6">Transform any study material into practice questions</p>
+                    <div className="bg-white rounded-lg shadow-xl p-8 relative">
+                        {/* Header with Connect API Key button */}
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Multiple Choice Practice</h1>
+                                <p className="text-gray-600 mb-6">Transform any study material into practice questions</p>
+                            </div>
+                            <button
+                                onClick={() => setShowApiKeyModal(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap"
+                            >
+                                {apiKey ? '✓ API Connected' : 'Connect API Key'}
+                            </button>
+                        </div>
                         
                         {/* Question Set Management */}
                         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -1346,69 +1423,129 @@ Order questions so that:
                                 <div className="mt-4 pt-3 border-t">
                                     <button
                                         onClick={() => {
-                                            setReviewMode(false);
+                                            // Load saved questionResults from localStorage (already loaded via useEffect)
+                                            // Don't reset questionResults - preserve progress
                                             setPracticeOrder([]);
-                                            setQuestionResults({});
+                                            
+                                            // Find first unanswered question, or start at 0 if all answered
+                                            const savedResults = localStorage.getItem(`questionResults-${currentSetId}`);
+                                            let startIndex = 0;
+                                            if (savedResults) {
+                                                try {
+                                                    const parsed = JSON.parse(savedResults);
+                                                    const questions = questionSets[currentSetId].questions || [];
+                                                    const firstUnanswered = questions.findIndex((q, idx) => {
+                                                        const key = q.id || `ai-${idx}`;
+                                                        return parsed[key] === undefined;
+                                                    });
+                                                    if (firstUnanswered !== -1) {
+                                                        startIndex = firstUnanswered;
+                                                    }
+                                                } catch (e) {
+                                                    console.error('Error parsing saved results:', e);
+                                                }
+                                            }
+                                            
                                             setCurrentView('practice');
-                                            setCurrentQuestionIndex(0);
-                                            setScore({ correct: 0, total: 0 });
+                                            setCurrentQuestionIndex(startIndex);
+                                            setScore({ correct: 0, total: 0 }); // Reset score for new session
                                         }}
-                                        className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition font-semibold"
+                                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition font-semibold"
                                     >
                                         Practice Questions ({questionSets[currentSetId].questions?.length || 0})
                                     </button>
-                                    {getIncorrectQuestions().length > 0 && (
-                                        <button
-                                            onClick={startIncorrectReview}
-                                            className="w-full mt-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition font-semibold"
-                                        >
-                                            🔴 Review Incorrect Questions ({getIncorrectQuestions().length})
-                                        </button>
-                                    )}
                                 </div>
                             )}
                         </div>
                         
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Claude API Key
-                            </label>
-                            <input
-                                type="password"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                placeholder="sk-ant-..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <p className="text-sm text-gray-500 mt-2">
-                                Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 hover:underline">console.anthropic.com</a>
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={saveApiKey}
-                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition mb-4"
-                        >
-                            Save API Key
-                        </button>
-
-                        <button
-                            onClick={() => setCurrentView('generate')}
-                            disabled={!apiKey}
-                            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed mb-3"
-                        >
-                            Generate Questions from Text
-                        </button>
-
+                        {/* Manually Add Questions Button */}
                         <button
                             onClick={() => {
                                 setCurrentView('manual');
                                 setError('');
                             }}
-                            className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition mb-3"
+                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition mb-3"
                         >
                             Manually Add Questions
                         </button>
+                        
+                        {/* API Key Modal */}
+                        {showApiKeyModal && (
+                            <div 
+                                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget) {
+                                        setShowApiKeyModal(false);
+                                        setError('');
+                                    }
+                                }}
+                            >
+                                <div 
+                                    className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-xl font-bold text-gray-800">Connect Claude API</h2>
+                                        <button
+                                            onClick={() => {
+                                                setShowApiKeyModal(false);
+                                                setError('');
+                                            }}
+                                            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Claude API Key
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={apiKey}
+                                            onChange={(e) => setApiKey(e.target.value)}
+                                            placeholder="sk-ant-..."
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-2">
+                                            Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 hover:underline">console.anthropic.com</a>
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            saveApiKey();
+                                            setShowApiKeyModal(false);
+                                        }}
+                                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition mb-4"
+                                    >
+                                        Save API Key
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            if (apiKey) {
+                                                setCurrentView('generate');
+                                                setShowApiKeyModal(false);
+                                            } else {
+                                                setError('Please enter your API key first');
+                                            }
+                                        }}
+                                        disabled={!apiKey}
+                                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    >
+                                        Generate Questions from Text
+                                    </button>
+                                    
+                                    {error && (
+                                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
+                                            {error}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         
                         {/* Error display - always visible */}
                         {error && (
@@ -1739,21 +1876,6 @@ Order questions so that:
                                                 className="hidden"
                                             />
                                         </label>
-                                        <label className="bg-blue-600 text-white py-1.5 px-3 rounded-lg hover:bg-blue-700 transition text-sm cursor-pointer">
-                                            🔄 Replace All
-                                            <input
-                                                type="file"
-                                                accept=".json"
-                                                onChange={(e) => importQuestions(e, true)}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                        <button
-                                            onClick={clearAllQuestions}
-                                            className="bg-red-600 text-white py-1.5 px-3 rounded-lg hover:bg-red-700 transition text-sm"
-                                        >
-                                            🗑️ Clear All
-                                        </button>
                                     </div>
                                 </div>
                                 <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -1892,7 +2014,6 @@ Order questions so that:
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 onClick={() => {
-                                    setReviewMode(false);
                                     setCurrentView('setup');
                                 }}
                                 className="text-blue-600 hover:text-blue-800"
@@ -1900,11 +2021,6 @@ Order questions so that:
                                 ← Exit Practice
                             </button>
                             <div className="text-sm text-gray-600">
-                                {reviewMode && (
-                                    <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold mr-2">
-                                        REVIEW MODE
-                                    </span>
-                                )}
                                 Question {currentQuestionIndex + 1} of {currentQuestions.length}
                             </div>
                         </div>
@@ -2064,32 +2180,14 @@ Order questions so that:
     // Results View
     if (currentView === 'results') {
         const percentage = Math.round((score.correct / score.total) * 100);
-        const incorrectCount = getIncorrectQuestions().length;
-        const wasReviewMode = reviewMode;
         
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white rounded-lg shadow-xl p-8 text-center">
                         <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                            {wasReviewMode && incorrectCount === 0 
-                                ? '🎉 All Incorrect Questions Mastered!' 
-                                : 'Practice Complete!'}
+                            Practice Complete!
                         </h2>
-                        
-                        {wasReviewMode && incorrectCount === 0 && (
-                            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-center">
-                                <p className="font-semibold">Congratulations! You've answered all incorrect questions correctly!</p>
-                                <p className="text-sm mt-1">The questions have been removed from your review list.</p>
-                            </div>
-                        )}
-                        
-                        {wasReviewMode && incorrectCount > 0 && (
-                            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4 text-center">
-                                <p className="font-semibold">You still have {incorrectCount} question{incorrectCount !== 1 ? 's' : ''} that need review.</p>
-                                <p className="text-sm mt-1">Continue practicing to master them all!</p>
-                            </div>
-                        )}
                         
                         <div className="my-8">
                             <div className="text-6xl font-bold text-blue-600 mb-2">{percentage}%</div>
@@ -2099,22 +2197,12 @@ Order questions so that:
                         </div>
 
                         <div className="space-y-3">
-                            {wasReviewMode && incorrectCount > 0 && (
-                                <button
-                                    onClick={startIncorrectReview}
-                                    className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition font-semibold"
-                                >
-                                    🔴 Continue Reviewing Incorrect ({incorrectCount})
-                                </button>
-                            )}
-                            {!wasReviewMode && (
-                                <button
-                                    onClick={restartPractice}
-                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold"
-                                >
-                                    Practice Again
-                                </button>
-                            )}
+                            <button
+                                onClick={restartPractice}
+                                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold"
+                            >
+                                Practice Again
+                            </button>
                             <button
                                 onClick={startNewSet}
                                 className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold"

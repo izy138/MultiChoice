@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
+// Use native fetch (Node.js 18+) instead of node-fetch to avoid punycode deprecation warning
 
 const app = express();
 const PORT = process.env.PORT || 3001;

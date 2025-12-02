@@ -1,0 +1,1102 @@
+{
+  "version": "1.0",
+  "exportDate": "2025-12-02T19:37:29.462Z",
+  "questionCount": 94,
+  "questions": [
+    {
+      "question": "Which of the following statements about address translation during program execution are correct? (Select all that apply)",
+      "options": [
+        "The compiler translates symbolic addresses to relocatable addresses",
+        "Symbolic addresses like variable names are used in the source code",
+        "The linker/loader translates relocatable addresses to absolute addresses",
+        "Address binding can occur at compile, link, load, or execution time"
+      ],
+      "correctAnswer": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "explanation": "All four statements are correct. The compiler converts symbolic addresses to relocatable addresses, symbolic addresses are used in source code, the linker/loader converts relocatable to absolute addresses, and address binding can happen at multiple stages of program execution.",
+      "id": "17647041359110aw1kqamqm"
+    },
+    {
+      "question": "Does fragmentation occur in a paging system?",
+      "options": [
+        "Yes, fragmentation occurs in paging",
+        "No, fragmentation does not occur in paging"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The statement 'Fragmentation does not occur in a paging system' is FALSE. While external fragmentation is eliminated in paging, internal fragmentation can still occur when a process does not use all the space in an allocated page.",
+      "id": "17647041359111d8vlmpc48"
+    },
+    {
+      "question": "Which concept maintains recent translations of logical addresses to frames in physical memory for faster retrieval?",
+      "options": [
+        "Translation lookaside buffer (TLB)",
+        "Hit ratio",
+        "Address segmentation",
+        "Principle of locality"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The Translation Lookaside Buffer (TLB) is a cache that stores recent logical-to-physical address translations to speed up memory access and reduce the overhead of address translation.",
+      "id": "17647041359112a8cupjeki"
+    },
+    {
+      "question": "What is the purpose of memory protection in operating systems?",
+      "options": [
+        "To prevent one process from accessing another process's memory",
+        "To prevent memory leaks",
+        "To reduce page faults",
+        "To optimize memory allocation"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Memory protection prevents one process from accessing another process's memory, ensuring system security and stability. The other options are related to different OS concerns, not the primary purpose of memory protection.",
+      "id": "17647041359113na2ze13xb"
+    },
+    {
+      "question": "What is the goal of page replacement algorithms?",
+      "options": [
+        "To increase the size of virtual memory",
+        "To reduce the size of the page table",
+        "To maximize CPU utilization",
+        "To minimize the number of page faults"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Page replacement algorithms aim to minimize page faults by selecting the best page to evict from memory when a new page needs to be loaded, optimizing memory management efficiency.",
+      "id": "17647041359114bu94m0y91"
+    },
+    {
+      "question": "Which of the following is a sign of thrashing?",
+      "options": [
+        "The CPU utilization decreases as the number of pages allocated to each process is increased",
+        "The CPU utilization increases as the degree of multiprogramming is increased",
+        "The CPU utilization increases as the number of pages allocated to each process is increased",
+        "The CPU utilization decreases as the degree of multiprogramming is increased"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Thrashing occurs when the system spends more time paging than executing processes. A key indicator is that CPU utilization decreases as the degree of multiprogramming increases, because the system is overwhelmed with page swapping.",
+      "id": "176470413591158jedalbxa"
+    },
+    {
+      "question": "If the base register is loaded with value 12345 and limit register is loaded with value 1000, which of the following memory address access will not result in a trap to the operating system?",
+      "options": [
+        "13346",
+        "12344",
+        "12500",
+        "12200"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The valid address range is [base, base+limit) = [12345, 13345). Address 12500 falls within this range (12345 ≤ 12500 < 13345), so it will not trap. Address 13346 exceeds the limit, 12344 is below base, and 12200 is also below base.",
+      "id": "17647041359116oo9jyivg5"
+    },
+    {
+      "question": "Which of the following best describes the difference between static and dynamic loading?",
+      "options": [
+        "Static loading loads all routines at compile time; dynamic loading loads routines only when needed",
+        "Static loading is used for system programs; dynamic loading for user programs",
+        "Static loading requires relocation; dynamic loading doesn't",
+        "Static loading is slower; dynamic loading is faster"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Static loading binds all routines at compile time, while dynamic loading loads routines into memory only when they are needed during program execution, allowing for more flexible memory usage.",
+      "id": "176470413591174q07fw99c"
+    },
+    {
+      "question": "Are shared libraries an example of using virtual memory to improve memory utilization?",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This statement is TRUE. Shared libraries are a form of dynamic loading where multiple processes can share the same library code in memory, improving memory utilization through virtual memory mechanisms.",
+      "id": "17647041359118ojnwwhmsw"
+    },
+    {
+      "question": "Do mobile operating systems like iOS and Android extensively use swapping to manage memory?",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is FALSE. Mobile operating systems do not extensively use swapping because they lack secondary storage optimized for it. Instead, they use other techniques like memory compression and aggressive process termination.",
+      "id": "17647041359119v72x3r2op"
+    },
+    {
+      "question": "Does memory compaction require relocating memory blocks while programs are running?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is TRUE. Memory compaction involves moving allocated memory blocks to eliminate fragmentation, which requires relocation of blocks while the system is running and processes may be executing.",
+      "id": "176470413591110ge274569c"
+    },
+    {
+      "question": "When processing two-dimensional arrays, does accessing elements by rows generally result in fewer page faults than accessing by columns?",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This statement is TRUE. Row-major access exhibits better locality of reference because consecutive row elements are typically stored in adjacent memory locations, resulting in fewer page faults compared to column-major access.",
+      "id": "17647041359111139b07ue1i"
+    },
+    {
+      "question": "In paging, does the valid bit in a page table entry indicate whether the corresponding page is currently in main memory?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is TRUE. The valid bit (or present bit) in a page table entry indicates whether the corresponding page is currently loaded in main memory (1) or on disk (0).",
+      "id": "176470413591112rbh0anps8"
+    },
+    {
+      "question": "Does thrashing occur when a system spends more time paging than executing processes?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is TRUE. Thrashing is defined as a situation where the system spends most of its time swapping pages between memory and disk rather than executing actual process instructions, severely degrading performance.",
+      "id": "176470413591113xw4t4rjtg"
+    },
+    {
+      "question": "Is pure LRU implementation too expensive for most operating systems in practice?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is TRUE. Implementing pure LRU (Least Recently Used) page replacement is computationally expensive because it requires tracking access times for all pages. Most systems use approximations like the Second-Chance algorithm instead.",
+      "id": "176470413591114wiq91xoth"
+    },
+    {
+      "question": "The 50-percent rule in memory allocation refers to fragmentation losses. This property is typically observed in which of the following memory allocation strategies?",
+      "options": [
+        "Next Fit",
+        "Best Fit",
+        "First Fit",
+        "Worst Fit"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The 50-percent rule applies to First Fit allocation, stating that even with optimization, when N blocks are allocated, up to 0.5N blocks may be lost to fragmentation, meaning up to one-third of memory becomes unusable.",
+      "id": "176470413591115lq2aoa0wo"
+    },
+    {
+      "question": "What is the difference between mechanisms and policies?",
+      "options": [
+        "Mechanisms determine how something will be done, while policies decide what will be done",
+        "Mechanisms determine what will be done, while policies decide how it will be done",
+        "Mechanisms determine what will be done, while policies decide when it will be done",
+        "Mechanisms determine how something will be done, while policies decide why something will be done"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Mechanisms are the implementation details (how), while policies are the decision rules (what). For example, paging is a mechanism, while LRU is a policy for deciding which page to replace.",
+      "id": "176470413591116chgw14sr1"
+    },
+    {
+      "question": "Which type of attack prevents users from accessing services in a timely manner?",
+      "options": [
+        "Buffer overflow attack",
+        "Denial of service",
+        "Logic bomb",
+        "Trojan horse"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A Denial of Service (DoS) attack overwhelms a system with requests or traffic to prevent legitimate users from accessing services in a timely manner or at all.",
+      "id": "176470413591117yg70o53nq"
+    },
+    {
+      "question": "Which of the following is FALSE about streams?",
+      "options": [
+        "Messages may be dropped in a stream even if flow control is implemented",
+        "Each stream module contains a pair of queues",
+        "A stream is a full-duplex connection between a device driver and a user-level process",
+        "The number of modules in a stream is fixed by the operating system"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The statement that 'The number of modules in a stream is fixed by the operating system' is FALSE. The number of modules in a stream can be dynamically configured and is not fixed by the OS.",
+      "id": "1764704135911187fqww66rm"
+    },
+    {
+      "question": "The logical address (2,4) with a 5-bit page number and a 4-bit offset denotes a binary address of _____.",
+      "options": [
+        "000010100",
+        "000100100",
+        "110110110",
+        "0100"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Page number 2 in 5 bits is 00010, and offset 4 in 4 bits is 0100. Concatenating them gives 000100100. This represents the logical address where the first 5 bits are the page and the last 4 bits are the offset within that page.",
+      "id": "176470413591119oec5kr6py"
+    },
+    {
+      "question": "Which operation modifies the file directory?",
+      "options": [
+        "Read file",
+        "Write file",
+        "Delete file",
+        "Open file"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The delete file operation modifies the file directory by removing an entry from it. Reading, writing, and opening a file do not change the directory structure itself.",
+      "id": "1764704135911208k9tf6813"
+    },
+    {
+      "question": "Is a relocation register used to check for invalid memory addresses generated by a CPU?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This statement is FALSE. A relocation register (base register) is used to add a base address to logical addresses during address translation, not to check for invalid addresses. Validity checking is done by the limit register.",
+      "id": "1764704135911219iirj256r"
+    },
+    {
+      "question": "Is the length of a logical record fixed for a given operating system?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This statement is FALSE. The length of a logical record can vary depending on the application and file system. Operating systems typically support variable-length records.",
+      "id": "17647041359112204pbrwe7l"
+    },
+    {
+      "question": "Trojan mule is a type of Trojan horse which emulates __________",
+      "options": [
+        "a login program",
+        "a legitimate webpage",
+        "a system shell",
+        "a legitimate email"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A Trojan mule is a specific type of Trojan horse that emulates a login program, tricking users into providing credentials by presenting a fake authentication interface.",
+      "id": "176470413591123g1wikqny9"
+    },
+    {
+      "question": "A control register in an I/O device ________",
+      "options": [
+        "is read by the host to get input data from the device",
+        "is written by the host to send output data to the device",
+        "contains status bits that can be read by the host",
+        "is written by the host to send commands and control device operations"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Control registers are written by the host processor to send commands and control device operations. Data registers handle input/output data, while status registers are read to check device status.",
+      "id": "176470413591124lqjefvdwq"
+    },
+    {
+      "question": "The Second-Chance algorithm __________",
+      "options": [
+        "is same as FIFO algorithm if all pages in memory have been referenced at least once since the last page fault",
+        "is same as LRU algorithm if all pages in memory have been referenced at least once since the last page fault",
+        "is same as FIFO algorithm if none of the pages in memory have been referenced since the last page fault",
+        "is same as LRU algorithm if none of the pages in memory have been referenced since the last page fault"
+      ],
+      "correctAnswer": 0,
+      "explanation": "When all pages have been referenced since the last page fault, the Second-Chance algorithm behaves like FIFO because all pages will have their reference bit set to 1, and all will be given a second chance, maintaining FIFO order.",
+      "id": "176470413591125iaq0r9a6w"
+    },
+    {
+      "question": "Which type of malicious code exploits system weaknesses to spawn copies of itself on other systems and does so independently of a host program?",
+      "options": [
+        "Logic bomb",
+        "Virus",
+        "Trojan horse",
+        "Worm"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A worm is self-replicating malware that propagates independently without requiring a host program. Unlike viruses, worms do not need to attach to existing programs to spread.",
+      "id": "176470413591126wtt52n9ud"
+    },
+    {
+      "question": "Which of the following encrypts information on the target computer and renders it inaccessible to the owner?",
+      "options": [
+        "Logic bomb",
+        "Ransomware",
+        "Spyware",
+        "All of these options"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Ransomware specifically encrypts a user's files and data, making them inaccessible until a ransom is paid. Logic bombs and spyware have different primary functions.",
+      "id": "176470413591127dt17c2bho"
+    },
+    {
+      "question": "A logical address __________",
+      "options": [
+        "is an integer in the range [0 : n-1], where n is the size of logical memory",
+        "consists of a variable number of bits",
+        "is a pointer to physical memory",
+        "is an integer in the range [0 : n-1], where n is the size of physical memory"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A logical address is an integer in the range [0 : n-1] where n is the size of logical (virtual) memory. It is generated by the CPU and must be translated to physical addresses by the memory management unit.",
+      "id": "17647041359112895rkziwnt"
+    },
+    {
+      "question": "Which method to protect passwords from being stolen during transmission relies on random numbers generated by the system?",
+      "options": [
+        "Biometrics",
+        "Challenge response",
+        "One-time password",
+        "Salting"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The challenge-response method relies on random challenges generated by the system. The user must respond correctly to the challenge without transmitting the actual password, preventing password theft during transmission.",
+      "id": "176470413591129xknwwdv8b"
+    },
+    {
+      "question": "In the two-level directory, if a user refers to a particular file then __________",
+      "options": [
+        "first UFD (user file directory) is searched, then MFD (master file directory)",
+        "first MFD (master file directory) is searched, then UFD (user file directory)",
+        "only MFD (master file directory) is searched",
+        "only his/her own UFD (user file directory) is searched"
+      ],
+      "correctAnswer": 3,
+      "explanation": "In a two-level directory structure, when a user refers to a file, only their own UFD (user file directory) is searched. The MFD is used to locate the user's UFD when they log in.",
+      "id": "176470413591130w2frxmp1n"
+    },
+    {
+      "question": "Port scanning allows a hacker to __________",
+      "options": [
+        "modify a transmission between a remote user and a system",
+        "detect a system's vulnerabilities",
+        "steal known users' passwords",
+        "disrupt legitimate use of a system"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Port scanning allows an attacker to identify which ports are open on a target system, revealing which services are running and potentially detecting vulnerabilities that can be exploited.",
+      "id": "176470413591131t80f3y0um"
+    },
+    {
+      "question": "Consider a logical address with 18 bits used to represent an entry in a conventional page table. How many entries are in the conventional page table?",
+      "options": [
+        "18",
+        "1,024",
+        "262,144",
+        "1,048,576"
+      ],
+      "correctAnswer": 2,
+      "explanation": "With 18 bits, the number of possible page numbers is 2^18 = 262,144. This represents the number of entries in the page table, as each bit position can represent a different page.",
+      "id": "176470413591132xc7rqtf9y"
+    },
+    {
+      "question": "Which biometric authentication technique is generally superior in accuracy to the others?",
+      "options": [
+        "Voice analysis",
+        "Signature recognition",
+        "Iris scan",
+        "Hand geometry"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Iris scanning is considered the most accurate biometric authentication technique because iris patterns are highly unique, stable over time, and difficult to forge or replicate.",
+      "id": "176470413591133naiekxovh"
+    },
+    {
+      "question": "Which of the following statements is correct?",
+      "options": [
+        "Any attempt by a user program to access memory at an address lower than the limit register value results in a trap to the operating system",
+        "Any attempt by a user program to access memory at an address higher than the base register value results in a trap to the operating system",
+        "Base register holds the size of a process",
+        "Limit register holds the size of a process"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The limit register holds the size of a process, defining the maximum offset from the base address. The base register holds the starting address. Access outside the range [base, base+limit) triggers a trap.",
+      "id": "176470413591134ovz29iw9x"
+    },
+    {
+      "question": "When an OS uses the LRU (least-recently-used) page replacement algorithm, what happens to the page at the head of the queue when a non-resident page is referenced?",
+      "options": [
+        "The page is moved to the end of the queue",
+        "Nothing happens",
+        "The page is removed from the queue and from memory",
+        "The page is removed and the reference string is updated"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In LRU, the page at the head of the queue (the least recently used page) is evicted from memory when a new page needs to be loaded. It is removed from both the queue and physical memory.",
+      "id": "1764704135911357d5r7u532"
+    },
+    {
+      "question": "__________ occurs over time as a result of several processes running on a system using pure paging.",
+      "options": [
+        "Buffer overflow",
+        "Internal fragmentation",
+        "External fragmentation",
+        "Address translation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Internal fragmentation occurs in paging systems when allocated pages contain unused space. External fragmentation does not occur in pure paging because memory is allocated in fixed-size pages.",
+      "id": "176470413591136x7nhlmv1s"
+    },
+    {
+      "question": "Computing systems need cache because __________",
+      "options": [
+        "all of these options",
+        "register access is slow and cache speeds it up",
+        "main memory is expensive and cache offsets the cost",
+        "accessing main memory is slow and cache speeds it up"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The primary reason systems need cache is because accessing main memory is much slower than accessing CPU registers. Cache provides a faster intermediate storage level to reduce memory access latency.",
+      "id": "176470413591137x0sn4w3i6"
+    },
+    {
+      "question": "Which phase of a running process results in the greatest increase in the number of pages referenced?",
+      "options": [
+        "The first few memory operations",
+        "During process shutdown/kill",
+        "In the middle of a given frame",
+        "At random times"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The first few memory operations of a process typically result in the greatest increase in page references as the process initializes, loads its code, and begins accessing data structures (cold start or startup phase).",
+      "id": "176470413591138bxzfzg8ct"
+    },
+    {
+      "question": "In two-level directory structure, is the system's master file directory (MFD) searched when a user logs in?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "This statement is TRUE. When a user logs in, the MFD is searched to locate and load the user's personal UFD (User File Directory), establishing the context for that user's file access.",
+      "id": "176470413591139guekk1n4f"
+    },
+    {
+      "question": "The protection bit in a page table __________",
+      "options": [
+        "marks a page table as read-only or read-write",
+        "marks a frame as read-only or read-write",
+        "all of these options",
+        "provides protection against unauthorized updates in the page table"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The protection bit provides protection against unauthorized updates by preventing write operations to read-only pages. It controls access permissions (read-only vs. read-write) at the page level.",
+      "id": "1764704135911403lxfkdrtr"
+    },
+    {
+      "question": "Which statement accurately describes the correlation between the TLB hit ratio and the overhead of address translation?",
+      "options": [
+        "The higher the hit ratio, the higher the overhead of address translation",
+        "The lower the hit ratio, the lower the overhead of address translation",
+        "The overhead of address translation is independent of the hit ratio",
+        "The lower the hit ratio, the higher the overhead of address translation"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A lower TLB hit ratio means more address translations require accessing the page table, which is time-consuming. A higher hit ratio reduces overhead because most translations are found in the fast TLB cache.",
+      "id": "176470413591141xygpfnfjx"
+    },
+    {
+      "question": "An advantage of virtual memory is that __________",
+      "options": [
+        "it provides a way to execute a program that is only partially loaded in memory",
+        "the programmers can concentrate on programming the problem instead of worrying about the amount of physical memory available",
+        "a program can be much larger than the size of physical memory",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All three statements are advantages of virtual memory. It allows partial loading of programs, abstracts away memory management concerns from programmers, and enables programs larger than physical memory through paging and swapping.",
+      "id": "1764704135911427wyfw4eao"
+    },
+    {
+      "question": "Which statement about block size and internal fragmentation in file systems is true?",
+      "options": [
+        "The larger block size, the greater the internal fragmentation",
+        "The smaller block size, the greater the internal fragmentation",
+        "The larger block size, the smaller internal fragmentation",
+        "There is no relation between block size and internal fragmentation"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Larger block sizes increase internal fragmentation because files may not fill blocks completely, wasting more space. Smaller blocks waste less space but increase external fragmentation and overhead.",
+      "id": "176470413591143u4uvsilxg"
+    },
+    {
+      "question": "The dirty (modify) bit identifies __________",
+      "options": [
+        "a page that is shared by multiple processes",
+        "a page that has been modified since it was loaded",
+        "a page that has been corrupted",
+        "a page that needs to be reloaded when accessed"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The dirty or modify bit indicates that a page in memory has been changed since it was loaded. This bit determines whether a page must be written back to disk when evicted from memory.",
+      "id": "1764704135911449mk4iau0b"
+    },
+    {
+      "question": "Indexed allocation __________",
+      "options": [
+        "none of these options",
+        "all of these options",
+        "does not suffer from external fragmentation",
+        "supports direct access"
+      ],
+      "correctAnswer": 1,
+      "explanation": "All statements about indexed allocation are correct: it does not suffer from external fragmentation (uses index blocks), supports direct file access (can jump directly to any block via the index), and has other advantages over contiguous and linked allocation.",
+      "id": "176470413591145yo6h6flr9"
+    },
+    {
+      "question": "Is there a 1:1 correspondence between the number of entries in the TLB and the number of entries in the page table?",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "False. The TLB (Translation Lookaside Buffer) is a cache that stores only recently used page table entries, not all entries. The number of TLB entries is typically much smaller than the number of page table entries.",
+      "id": "17647042393410grqm6b8ik"
+    },
+    {
+      "question": "Which of the following is a sign of thrashing?",
+      "options": [
+        "The CPU utilization increases as the degree of multiprogramming is increased",
+        "The CPU utilization decreases as the number of pages allocated to each process is increased",
+        "The CPU utilization decreases as the degree of multiprogramming is increased",
+        "The CPU utilization increases as the number of pages allocated to each process is increased"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Thrashing is characterized by CPU utilization decreasing as the degree of multiprogramming increases. This happens because more processes competing for memory leads to more page faults and disk I/O, reducing productive CPU work.",
+      "id": "176470423934114429qhoj2"
+    },
+    {
+      "question": "Thrashing occurs when _____.",
+      "options": [
+        "Too many processes are sharing memory",
+        "Too few processes are resident in memory",
+        "The mean time between page faults is greater than 1",
+        "The disk is underutilized"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Thrashing occurs when too many processes are sharing memory, causing excessive page faults and swapping between main memory and disk, leading to poor system performance.",
+      "id": "17647042393412doekrr935"
+    },
+    {
+      "question": "Which of the following is true about the strategy that uses page fault frequency (PFF) to prevent thrashing?",
+      "options": [
+        "A new process may be swapped in if PFF is too low",
+        "A page is deallocated from a process if the PFF is too low",
+        "All of the above",
+        "A new page is allocated to a process if PFF is too high"
+      ],
+      "correctAnswer": 2,
+      "explanation": "All statements are true. The PFF strategy allocates more pages if the page fault rate is too high (above upper threshold) and deallocates pages if it's too low (below lower threshold). New processes can be swapped in when PFF is low across the system.",
+      "id": "176470423934137kptw9t5i"
+    },
+    {
+      "question": "When 'n' processes are running concurrently in a virtual memory system and the system is thrashing, which is likely to be true?",
+      "options": [
+        "CPU utilization is very high, disk utilization is very high",
+        "CPU utilization is very low, disk utilization is very high",
+        "CPU utilization is very high, disk utilization is very low",
+        "CPU utilization is very low, disk utilization is very low"
+      ],
+      "correctAnswer": 1,
+      "explanation": "During thrashing, CPU utilization is very low because the CPU is idle waiting for pages to be fetched from disk, while disk utilization is very high due to constant paging activity.",
+      "id": "17647042393414hnc0infk1"
+    },
+    {
+      "question": "Which of the following is true about choosing an appropriate page size?",
+      "options": [
+        "Smaller page size reduces the number of page faults",
+        "Larger page size reduces I/O time",
+        "Larger page size results in reducing total I/O",
+        "Larger page size results in less total allocated memory"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Larger page size reduces I/O time because fewer I/O operations are needed to transfer the same amount of data. However, it may increase internal fragmentation and page faults. Smaller pages reduce internal fragmentation but increase I/O overhead.",
+      "id": "17647042393415lk3lt7wa3"
+    },
+    {
+      "question": "In swapping with paging technique, individual pages of a process are swapped in or out.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True. Combined paging and swapping allows individual pages of a process to be swapped between main memory and secondary storage, enabling more efficient memory management than full process swapping.",
+      "id": "176470423934164jccpsyan"
+    },
+    {
+      "question": "Suppose a program is operating with execution-time binding and the physical address generated is 300. The relocation register is set to 100. What is the corresponding logical address?",
+      "options": [
+        "200",
+        "300",
+        "201",
+        "199"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Logical address = Physical address - Relocation register value = 300 - 100 = 200. The relocation register holds the base address in physical memory, so subtracting it from the physical address gives the logical address.",
+      "id": "17647042393417e2xak4pf5"
+    },
+    {
+      "question": "With the second-chance algorithm, if the pointer is at a page p with r = 0 then the following happens at a page fault:",
+      "options": [
+        "Page p is replaced and the pointer remains at the current frame",
+        "Page p is replaced and r is set to 0",
+        "Page p is replaced and the pointer is advanced to the next frame",
+        "r is set to 1 and the pointer is advanced to the next frame"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In the second-chance algorithm, if a page has r=0 (reference bit is 0), it means the page hasn't been used recently. It is replaced and the pointer advances to the next frame to continue searching.",
+      "id": "17647042393418gj2go0y4b"
+    },
+    {
+      "question": "A relocation register holds the _____ of a program in memory.",
+      "options": [
+        "Size",
+        "Physical starting address",
+        "Logical starting address",
+        "Symbolic address"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The relocation register (or base register) holds the physical starting address of a program in memory. It is used to translate logical addresses to physical addresses during execution-time binding.",
+      "id": "17647042393419w9ur3ti4u"
+    },
+    {
+      "question": "Assume the value of the base and limit registers are 1200 and 350 respectively. Which of the following addresses is legal?",
+      "options": [
+        "355",
+        "1551",
+        "All of these options",
+        "1200"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A logical address is legal if it is within the limit (0 to 350). Address 1200 is a physical address (base + 0). Only logical addresses 0-350 are valid. Physical address 1200 is legal as the base address itself.",
+      "id": "176470423934110kcqu9x5me"
+    },
+    {
+      "question": "The most preferred method of swapping a process is",
+      "options": [
+        "To copy an entire file to swap space at process startup and then perform demand paging from the swap space",
+        "To swap using the file system",
+        "To demand-page from the file system initially but to write the pages to swap space as they are replaced",
+        "None of the above"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The most efficient approach is to demand-page from the file system initially (avoiding unnecessary copying) but write pages to swap space as they are replaced (improving performance for subsequent accesses).",
+      "id": "176470423934111imy94yfwr"
+    },
+    {
+      "question": "An OS tries to prevent memory from becoming fragmented. Which approach tries to fill the smallest open memory gap with a request?",
+      "options": [
+        "Next-fit",
+        "Best-fit",
+        "First-fit",
+        "Worst-fit"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Best-fit allocates memory to a process using the smallest available block that can accommodate it. This minimizes wasted space in the selected block, reducing fragmentation.",
+      "id": "176470423934112zteijgh1k"
+    },
+    {
+      "question": "If the starting address location changes, in which of the following cases, the program has to be recompiled?",
+      "options": [
+        "Both compile and load time bindings",
+        "Load time binding",
+        "Compile time binding",
+        "Execution time binding"
+      ],
+      "correctAnswer": 2,
+      "explanation": "With compile-time binding, addresses are determined at compile time and embedded in the code. If the starting address changes, the program must be recompiled. Load-time and execution-time binding handle address changes dynamically.",
+      "id": "176470423934113nge38rk42"
+    },
+    {
+      "question": "A page fault must be preceded by a TLB miss.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "True. When a page is not in the TLB (TLB miss), the operating system must check the page table. If the page is not in physical memory, a page fault occurs. So logically, a TLB miss precedes a page fault.",
+      "id": "176470423934114kif5q89tt"
+    },
+    {
+      "question": "The loss of usable memory space due to the mismatch between the page size and the size of a program is referred to as _____ fragmentation.",
+      "options": [
+        "Internal",
+        "External",
+        "Logical",
+        "Physical"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Internal fragmentation occurs when a page is not completely filled, wasting memory within that page. External fragmentation occurs between pages. This mismatch between page size and program size causes internal fragmentation.",
+      "id": "176470423934115ieu7tzypj"
+    },
+    {
+      "question": "Suppose the size of a process is 10,000 bytes and the relocation register is loaded with value 5000, which of the following memory address this process can access?",
+      "options": [
+        "Logical address 10,350",
+        "None of these options",
+        "Physical address 4,500",
+        "Physical address 10,350"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The relocation register (base) = 5000. A logical address of 5,350 translates to physical address 5000 + 5,350 = 10,350. The process can access physical addresses from 5000 to 15,000.",
+      "id": "176470423934116a3o1neig8"
+    },
+    {
+      "question": "A process request requires more memory than is currently available. Rather than wait for memory to be released, a _____ technique is used to consolidate disjointed available memory space.",
+      "options": [
+        "Linking",
+        "Fragmentation",
+        "Compaction",
+        "Swapping"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Compaction consolidates disjointed free memory space by moving allocated memory blocks together, creating a larger contiguous block for allocation. This solves external fragmentation.",
+      "id": "176470423934117x7p9mfzc2"
+    },
+    {
+      "question": "A drawback of equal frame allocation or proportional frame allocation schemes is that",
+      "options": [
+        "The allocation varies according to the degree of multiprogramming",
+        "They are very expensive to compute",
+        "A high-priority process is treated the same as a low-priority process",
+        "The processes that arrive earlier get more pages than the processes arriving later"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Equal and proportional frame allocation schemes do not consider process priority. All processes are treated equally regardless of their importance, which is inefficient for systems with varying process priorities.",
+      "id": "1764704239341186jeslzzwi"
+    },
+    {
+      "question": "What is the role of a memory management unit (MMU) in an operating system?",
+      "options": [
+        "To translate virtual addresses to physical addresses",
+        "To manage CPU registers",
+        "To manage secondary memory",
+        "To control the allocation of cache memory"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The MMU's primary role is to translate virtual addresses generated by the CPU into physical addresses in main memory. It also provides memory protection capabilities.",
+      "id": "176470423934119xfisgiu0r"
+    },
+    {
+      "question": "What is the purpose of the 'TLB' (Translation Lookaside Buffer) in the memory management unit?",
+      "options": [
+        "To manage the allocation of cache memory blocks",
+        "To store the contents of the main memory for quick access",
+        "To handle the swapping of processes in and out of the main memory",
+        "To provide a fast look-up for virtual-to-physical address translation"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The TLB is a fast associative memory cache that stores recently used page table entries, providing quick translation of virtual addresses to physical addresses without consulting the main page table.",
+      "id": "176470423934120jc3vzfnqf"
+    },
+    {
+      "question": "Which of the following describes the purpose of the 'swapping' technique in memory management?",
+      "options": [
+        "To move data between main memory and secondary storage",
+        "To transfer data between cache and main memory",
+        "To allocate memory to different processes",
+        "To rearrange memory blocks for efficient access"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Swapping moves entire processes or pages between main memory and secondary storage (disk) to manage limited physical memory resources and allow more processes to run concurrently.",
+      "id": "17647042393412113aazjj16"
+    },
+    {
+      "question": "A DMA transfers data between ______.",
+      "options": [
+        "A device and main memory",
+        "A device and the device controller",
+        "A device controller and main memory"
+      ],
+      "correctAnswer": 2,
+      "explanation": "DMA (Direct Memory Access) allows a device controller to transfer data directly to/from main memory without CPU intervention, bypassing the device itself in the data path.",
+      "id": "176470423934122k4aepqoar"
+    },
+    {
+      "question": "An absolute path length of a file is not shorter than its relative path length.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "False. An absolute path specifies the complete path from the root directory, while a relative path is relative to the current directory. A relative path can be much shorter than the absolute path.",
+      "id": "176470423934123j8c0lqtnv"
+    },
+    {
+      "question": "TLB is a fast associative memory buffer that maintains recent translations of logical addresses to frames in physical memory for faster retrieval.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True. The TLB caches virtual-to-physical address translations, allowing rapid address translation without accessing the full page table, significantly speeding up memory access.",
+      "id": "176470423934124xvloiqf4w"
+    },
+    {
+      "question": "Using a modified/dirty bit flag in the page-tables is to minimize the movement of data from backing store to the main memory.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "False. The dirty/modified bit is used to track which pages have been modified in memory. This minimizes I/O by only writing back modified pages to disk, not to minimize loading from backing store.",
+      "id": "176470423934125548mkw8pg"
+    },
+    {
+      "question": "Which of the following statements is NOT true?",
+      "options": [
+        "Demand paging is the principle of loading a page into memory only when the page is needed, rather than at the start of the execution",
+        "Second Chance page replacement algorithm is a practical approximation of LRU algorithm",
+        "A page fault is an interrupt that occurs when a program attempts to reference a page not residing in the backing store",
+        "FIFO page replacement algorithm may cause more page-faults when more frames are allocated to a given process"
+      ],
+      "correctAnswer": 2,
+      "explanation": "False statement: A page fault occurs when a page is NOT in physical memory, not in backing store. The page fault requires loading from backing store into memory. The other statements are all true.",
+      "id": "1764704239341260q47xucyu"
+    },
+    {
+      "question": "Which of the following statements is NOT true?",
+      "options": [
+        "Page replacement algorithms, such as Least Recently Used (LRU) or First-In-First-Out (FIFO), determine which pages to remove from memory when a page fault occurs, optimizing memory usage",
+        "Page faults cause programs to crash or terminate",
+        "A page fault occurs when a program tries to access a page that is not currently in physical memory, requiring the operating system to load the page from disk into memory",
+        "Virtual memory allows the operating system to use disk space as an extension of physical memory, enabling programs to run as if there is more RAM than actually available"
+      ],
+      "correctAnswer": 1,
+      "explanation": "False statement: Page faults do not cause programs to crash or terminate. They are normal events in virtual memory systems that trigger the OS to load the required page from disk. All other statements are true.",
+      "id": "176470423934127lb5mptder"
+    },
+    {
+      "question": "What is the primary cause of external memory fragmentation?",
+      "options": [
+        "Overuse of virtual memory",
+        "Frequent allocation and deallocation of variable-sized blocks",
+        "Insufficient memory allocation algorithms",
+        "Large, non-contiguous memory blocks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "External fragmentation is primarily caused by repeated allocation and deallocation of variable-sized memory blocks, creating scattered free spaces that are too small to be useful, even if total free memory is adequate.",
+      "id": "176470423934128ta9jp91ss"
+    },
+    {
+      "question": "Which type of violation involves preventing legitimate use of the system?",
+      "options": [
+        "Breach of Integrity",
+        "Denial of Service",
+        "Theft of Service",
+        "Breach of Confidentiality"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Denial of Service (DoS) attacks prevent legitimate users from accessing system resources and services. This is distinct from integrity (data modification), confidentiality (data exposure), and service theft violations.",
+      "id": "176470423934129wf3bapn8a"
+    },
+    {
+      "question": "Which of the following is NOT a component of a paging system?",
+      "options": [
+        "Page table",
+        "Page frame",
+        "Logical address space",
+        "Segment table"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Segment table is a component of segmentation, not paging. Paging uses page tables to map logical pages to physical frames. Segment tables are used in segmented memory systems.",
+      "id": "176470423934130q3bqjuonx"
+    },
+    {
+      "question": "Vectored I/O allows multiple I/O operations to be performed with a single system call.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True. Vectored I/O (scatter-gather I/O) enables a single system call to perform multiple I/O operations on different buffers or file offsets, improving efficiency.",
+      "id": "176470423934131aogie21uf"
+    },
+    {
+      "question": "Demand paging allows processes to be loaded into memory only when needed.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True. Demand paging loads pages into memory only when they are actually needed (on page fault), rather than loading the entire process at startup. This improves memory utilization.",
+      "id": "176470423934132j6mztkv50"
+    },
+    {
+      "question": "The Memory Management Unit (MMU): (Select all that apply)",
+      "options": [
+        "Contains hardware support for address translation",
+        "Provides memory protection capabilities",
+        "Translates logical addresses to physical addresses",
+        "Sits between the CPU and memory controller hub"
+      ],
+      "correctAnswer": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "explanation": "All statements are correct. The MMU is a hardware component positioned between the CPU and memory system that performs address translation, enforces memory protection, and controls access to main memory.",
+      "id": "176470423934133ipuk1ekak"
+    },
+    {
+      "question": "In the Page-Fault Frequency approach, what happens if the page-fault rate is too high?",
+      "options": [
+        "The process is terminated",
+        "Frames are taken away from the process",
+        "More frames are allocated to the process",
+        "The process priority is reduced"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In PFF, if the page-fault rate exceeds an upper threshold, it indicates the process needs more frames. The system allocates additional frames to reduce page faults. Conversely, if the rate is too low, frames are deallocated.",
+      "id": "1764704239341349hbjdn269"
+    },
+    {
+      "question": "In a system with 4 KB pages, the offset would require 12 bits.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "True. 4 KB = 4096 bytes = 2^12 bytes. Therefore, 12 bits are needed to represent the offset within a page (0 to 4095).",
+      "id": "1764704239341359qwofmshv"
+    },
+    {
+      "question": "What is fingerprinting in the context of security?",
+      "options": [
+        "Using biometric data for authentication",
+        "Creating unique identifiers for files",
+        "Identifying the OS and services running on a system",
+        "Leaving digital evidence of an attack"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In security, fingerprinting is the process of identifying characteristics of a system such as its operating system, running services, and software versions. This information is gathered during reconnaissance.",
+      "id": "17647042393413628yiqwuv5"
+    },
+    {
+      "question": "In Unix, hard links and the original file share the same inode number.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True. Hard links are multiple directory entries pointing to the same inode. All hard links to a file, including the original, share the same inode number and point to the same data blocks.",
+      "id": "176470423934137wgcur6yw1"
+    },
+    {
+      "question": "File permissions are r--r--r--. The owner tries to view the file contents with cat. What happens?",
+      "options": [
+        "Permission denied - no read permission",
+        "Only first line is shown",
+        "File contents display successfully",
+        "File opens in write mode"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Permissions r--r--r-- (444 in octal) give read permission to owner, group, and others. The owner can read the file, so 'cat' displays the full contents successfully.",
+      "id": "1764704239341382xu4pbc7r"
+    },
+    {
+      "question": "A symbolic link has permissions lrwxrwxrwx. What do these permissions actually control?",
+      "options": [
+        "Only deletion of the link",
+        "Nothing - link permissions are ignored",
+        "Access to the target file",
+        "Access to the link itself"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Symbolic link permissions are ignored by the operating system. Access to the target file is controlled by the target file's own permissions, not the symbolic link's permissions.",
+      "id": "176470423934139prdyfy0pf"
+    },
+    {
+      "question": "File permissions are -rw-rw---- (octal 660). After chmod g+r,g-w file, what changes?",
+      "options": [
+        "Owner loses no permissions, group loses write and execute",
+        "Owner loses execute, group loses write and execute",
+        "Owner gains read, group loses all permissions",
+        "Group gains read, loses write and execute"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Initial: -rw-rw---- (owner: rw, group: rw, others: --). After g+r,g-w: group gains read and loses write, resulting in -rw-r----- (owner: rw, group: r, others: --).",
+      "id": "176470423934140bwzv2hpa4"
+    },
+    {
+      "question": "A file has setuid bit set with permissions -rwsr-xr-x. When a regular user executes it, the process runs with:",
+      "options": [
+        "Regular user's privileges",
+        "Group privileges",
+        "File owner's privileges",
+        "Root privileges"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The setuid bit (s in owner's execute position) causes the executable to run with the file owner's privileges, not the executing user's privileges. This is a common privilege escalation mechanism.",
+      "id": "176470423934141m8qhr8jyo"
+    },
+    {
+      "question": "In a tree-structured directory, if you delete a directory, what happens to its subdirectories and files?",
+      "options": [
+        "The system prevents deletion if subdirectories exist",
+        "They are all deleted (recursive deletion)",
+        "They become inaccessible but remain on disk",
+        "They are moved to the parent directory"
+      ],
+      "correctAnswer": 1,
+      "explanation": "In tree-structured directories, deleting a directory typically performs recursive deletion of all subdirectories and files within it. Some systems may require the -r flag to enable this behavior.",
+      "id": "176470423934142uk3r2hjfk"
+    },
+    {
+      "question": "In Unix, the command 'cd ..' executed twice from /usr/local/bin will take you to:",
+      "options": [
+        "/usr/local",
+        "/usr",
+        "/ (root)",
+        "/usr/bin"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Starting at /usr/local/bin: First 'cd ..' takes you to /usr/local. Second 'cd ..' takes you to /usr. Each '..' moves up one directory level in the tree.",
+      "id": "176470423934143ot5hxtv2q"
+    },
+    {
+      "question": "In an acyclic-graph directory structure, what happens when you delete a file that has multiple hard links?",
+      "options": [
+        "An error occurs preventing deletion",
+        "All hard links are deleted immediately",
+        "The file is marked for deletion but remains until all links are removed",
+        "Only the deleted link is removed; file remains accessible through other links"
+      ],
+      "correctAnswer": 3,
+      "explanation": "When a hard link is deleted, only that directory entry is removed. The file remains accessible through other hard links. The file is only deleted when the reference count reaches zero.",
+      "id": "176470423934144qx2rhstb8"
+    },
+    {
+      "question": "If you create a hard link to a directory (where permitted), and then delete the original directory entry, what happens?",
+      "options": [
+        "The directory is deleted along with all contents",
+        "The hard link becomes a symbolic link",
+        "An error occurs; hard links to directories are generally not allowed",
+        "The directory remains accessible through the hard link"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Hard links to directories are generally not permitted in Unix systems to prevent cycles in the directory graph. Only symbolic links to directories are allowed. Creating hard links to directories is restricted at the OS level.",
+      "id": "176470423934145p08a1gv0e"
+    },
+    {
+      "question": "A symbolic link at /home/user/link1 points to './data/file.txt'. If you move link1 to /tmp/, where does it now point?",
+      "options": [
+        "/home/user/data/file.txt",
+        "/tmp/data/file.txt",
+        "/data/file.txt",
+        "The link breaks because the path is invalid"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Symbolic links store the path relative to their location. When moved to /tmp/, the relative path './data/file.txt' is now resolved from /tmp/, pointing to /tmp/data/file.txt. If that doesn't exist, the link becomes broken.",
+      "id": "176470423934146faojf9fcu"
+    },
+    {
+      "question": "In an acyclic-graph directory, what prevents cycles from forming?",
+      "options": [
+        "Users are not allowed to create links",
+        "The operating system automatically detects and removes cycles",
+        "Reference counting prevents cycles",
+        "Links are restricted (e.g., only to files, not subdirectories)"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Acyclic-graph directories prevent cycles by restricting links. Typically, hard links to subdirectories are not allowed, and symbolic links are restricted to prevent creating cycles. The OS enforces these restrictions at the file system level.",
+      "id": "176470423934147p5aylh631"
+    }
+  ]
+}

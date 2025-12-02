@@ -69,6 +69,46 @@ If you only want to use manual question input without AI features, you can:
 2. Manual questions and practice will work without the server
 3. AI features will show errors (which you can ignore if not using them)
 
+## Sharing with Others
+
+Want to share your question files with classmates? You have several options:
+
+### Quick Share: GitHub Pages (Recommended)
+
+**Best for**: Sharing pre-made JSON question files without needing AI features
+
+1. **Enable GitHub Pages** in your repository settings (Settings → Pages → Deploy from `main` branch)
+2. **Your app will be live at**: `https://[your-username].github.io/[repository-name]/`
+3. **Share question files via URL**:
+   ```
+   https://[your-username].github.io/MultiChoice/?load=os-test-3-2025-12-02.json
+   ```
+   The `?load=` parameter automatically loads questions when the page opens!
+
+**What works without backend:**
+- ✅ Viewing and practicing questions
+- ✅ Importing JSON files (via URL or manual upload)
+- ✅ Performance tracking
+- ✅ All question management features
+
+**What requires backend:**
+- ❌ AI question generation
+- ❌ AI-ordered practice
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions and other hosting options (Vercel, Netlify).
+
+### Importing Question Files
+
+**Option 1: Auto-load via URL**
+```
+https://your-app-url/?load=filename.json
+```
+
+**Option 2: Manual Import**
+1. Click "Import" button in the app
+2. Select your JSON file
+3. Questions will be loaded automatically
+
 ## Usage Guide
 
 ### Initial Setup
