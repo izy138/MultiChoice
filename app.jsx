@@ -44,7 +44,7 @@ function App() {
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     
     // Flag to track if we're auto-loading on first visit
-    const [isAutoLoading, setIsAutoLoading] = useState(false);
+    const isAutoLoadingRef = React.useRef(false);
     
     // API proxy URL - defaults to local proxy server
     const API_BASE_URL = 'http://localhost:3001/api/anthropic';
@@ -135,12 +135,9 @@ function App() {
                 };
             });
 
-            // Update savedManualQuestions
+            // Update savedManualQuestions using a callback to ensure state is set
             setSavedManualQuestions(questionsWithIds);
             setError('');
-            
-            // Wait a moment to ensure all state updates complete before resolving
-            await new Promise(resolve => setTimeout(resolve, 100));
             
             return true;
         } catch (error) {
@@ -187,6 +184,9 @@ function App() {
                     Object.values(parsed).every(set => !set.questions || set.questions.length === 0);
                 if (allSetsEmpty) {
                     shouldAutoLoadDefault = true;
+                    // Clear empty sets from localStorage to prevent conflicts
+                    localStorage.removeItem('questionSets');
+                    localStorage.removeItem('currentSetId');
                 }
             } catch (e) {
                 // If parsing fails, treat as no sets
@@ -194,20 +194,55 @@ function App() {
             }
         }
         
+        // Load default questions immediately if needed - fetch data first, then set state all at once
         if (shouldAutoLoadDefault) {
-            // Set flag to prevent premature saves
-            setIsAutoLoading(true);
-            // Try to load the default file after state is initialized
-            // Use a slightly longer delay to ensure all state initialization is complete
-            setTimeout(() => {
-                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).then(() => {
-                    setIsAutoLoading(false);
-                }).catch((err) => {
-                    setIsAutoLoading(false);
-                    // Show error to user if auto-load fails
+            isAutoLoadingRef.current = true;
+            // Fetch the data first, then set state once with complete data
+            (async () => {
+                try {
+                    const url = DEFAULT_QUESTIONS_FILE.startsWith('http') 
+                        ? DEFAULT_QUESTIONS_FILE 
+                        : encodeURIComponent(DEFAULT_QUESTIONS_FILE);
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
+                    const data = await response.json();
+                    
+                    let questionsToImport = [];
+                    if (Array.isArray(data)) {
+                        questionsToImport = data;
+                    } else if (data.questions && Array.isArray(data.questions)) {
+                        questionsToImport = data.questions;
+                    }
+                    
+                    if (questionsToImport.length > 0) {
+                        // Add IDs to questions
+                        const questionsWithIds = questionsToImport.map((q, index) => ({
+                            ...q,
+                            id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
+                        }));
+                        
+                        // Create set with questions all at once
+                        const setId = 'set-' + Date.now();
+                        const newSet = {
+                            name: DEFAULT_QUESTIONS_SET_NAME,
+                            questions: questionsWithIds,
+                            createdAt: Date.now()
+                        };
+                        
+                        // Set all state at once - no race condition
+                        setQuestionSets({ [setId]: newSet });
+                        setCurrentSetId(setId);
+                        setSavedManualQuestions(questionsWithIds);
+                        // Save to localStorage immediately since we have complete data
+                        localStorage.setItem('questionSets', JSON.stringify({ [setId]: newSet }));
+                        localStorage.setItem('currentSetId', setId);
+                    }
+                } catch (err) {
                     setError(`Failed to auto-load questions: ${err.message}. Please import manually using the Import button.`);
-                });
-            }, 200);
+                } finally {
+                    isAutoLoadingRef.current = false;
+                }
+            })();
         }
         
         // Load question sets
@@ -281,10 +316,15 @@ function App() {
 
     // Save question sets to localStorage (but skip during auto-load to prevent race condition)
     useEffect(() => {
-        if (!isAutoLoading && Object.keys(questionSets).length > 0) {
-            localStorage.setItem('questionSets', JSON.stringify(questionSets));
+        // Use ref for more reliable check (refs update synchronously)
+        if (!isAutoLoadingRef.current && Object.keys(questionSets).length > 0) {
+            // Only save if sets have questions (to prevent saving empty sets during auto-load)
+            const hasQuestions = Object.values(questionSets).some(set => set.questions && set.questions.length > 0);
+            if (hasQuestions) {
+                localStorage.setItem('questionSets', JSON.stringify(questionSets));
+            }
         }
-    }, [questionSets, isAutoLoading]);
+    }, [questionSets]);
 
     // Save current set ID to localStorage
     useEffect(() => {
