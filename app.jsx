@@ -45,9 +45,15 @@ function App() {
     
     // API proxy URL - defaults to local proxy server
     const API_BASE_URL = 'http://localhost:3001/api/anthropic';
+    
+    // Default JSON file to auto-load for first-time visitors (change this to your preferred file)
+    const DEFAULT_QUESTIONS_FILE = 'test 3.json';
+    
+    // Default name for the auto-loaded question set
+    const DEFAULT_QUESTIONS_SET_NAME = 'OS Final Exam Practice';
 
     // Helper function to load questions from JSON file (URL or local file)
-    const loadQuestionsFromJSON = async (urlOrPath) => {
+    const loadQuestionsFromJSON = async (urlOrPath, customSetName = null) => {
         try {
             // If it's a full URL, fetch it. Otherwise, treat as relative path
             const url = urlOrPath.startsWith('http') ? urlOrPath : urlOrPath;
@@ -78,19 +84,39 @@ function App() {
             }));
 
             // Create or update a question set using functional updates
+            let newSetId = null;
             setQuestionSets(prev => {
                 // Find existing set ID or create new one
                 const existingSetIds = Object.keys(prev);
                 const setId = existingSetIds.length > 0 ? existingSetIds[0] : 'set-' + Date.now();
+                newSetId = setId;
+                
+                // Generate a nice name from the filename if it's a new set
+                let setName = prev[setId]?.name || 'Imported Set';
+                if (!existingSetIds.includes(setId)) {
+                    // Use custom name if provided, otherwise extract from filename
+                    if (customSetName) {
+                        setName = customSetName;
+                    } else {
+                        // Extract name from filename (remove .json, replace spaces/underscores with spaces, capitalize)
+                        const filename = urlOrPath.split('/').pop().replace(/\.json$/i, '');
+                        setName = filename
+                            .replace(/[-_]/g, ' ')
+                            .split(' ')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                    }
+                }
+                
                 const newSet = {
-                    name: prev[setId]?.name || 'Imported Set',
+                    name: setName,
                     questions: questionsWithIds,
                     createdAt: prev[setId]?.createdAt || Date.now()
                 };
                 
                 // Update currentSetId if we created a new set
                 if (!existingSetIds.includes(setId)) {
-                    setTimeout(() => setCurrentSetId(setId), 0);
+                    setCurrentSetId(setId);
                 }
                 
                 return {
@@ -103,7 +129,6 @@ function App() {
             setError('');
             return true;
         } catch (error) {
-            console.error('Error loading questions from JSON:', error);
             setError(`Failed to load questions: ${error.message}`);
             return false;
         }
@@ -133,6 +158,18 @@ function App() {
                 // Navigate to practice view after loading
                 setCurrentView('practice');
             });
+        }
+        
+        // Auto-load default questions file for first-time visitors (if no question sets exist)
+        const shouldAutoLoadDefault = !savedQuestionSets && !loadParam;
+        if (shouldAutoLoadDefault) {
+            // Try to load the default file after state is initialized
+            // Use a slightly longer delay to ensure all state initialization is complete
+            setTimeout(() => {
+                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).catch(() => {
+                    // Silently fail if file doesn't exist - user can still import manually
+                });
+            }, 200);
         }
         
         // Load question sets
@@ -173,7 +210,6 @@ function App() {
                     setCurrentSetId(firstSetId);
                 }
             } catch (e) {
-                console.error('Error parsing saved question sets:', e);
             }
         } else {
             // Migrate old data if no sets exist
@@ -253,7 +289,6 @@ function App() {
                     const parsed = JSON.parse(savedResults);
                     setQuestionResults(parsed);
                 } catch (e) {
-                    console.error('Error parsing saved question results:', e);
                 }
             } else {
                 setQuestionResults({});
@@ -493,7 +528,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
             // Check if response was truncated
             const stopReason = data.stop_reason;
             if (stopReason === 'max_tokens') {
-                console.warn('Response was truncated due to max_tokens limit');
             }
             
             let responseText = data.content[0].text;
@@ -511,8 +545,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
             try {
                 parsedData = JSON.parse(responseText);
             } catch (parseError) {
-                console.error('JSON parse error:', parseError.message);
-                console.log('Response text (first 500 chars):', responseText.substring(0, 500));
                 throw new Error(`Failed to parse JSON response: ${parseError.message}. The response may have been truncated.`);
             }
             
@@ -538,7 +570,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                 throw new Error('No questions generated');
             }
         } catch (err) {
-            console.error('Error:', err);
             setError(`Failed to generate questions: ${err.message}`);
         } finally {
             setIsGenerating(false);
@@ -632,15 +663,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                 : [currentQuestion.correctAnswer];
             const correctAnswers = [...correctAnswerArray].sort((a, b) => a - b);
             const selected = [...selectedAnswers].sort((a, b) => a - b);
-            
-            // Debug logging
-            console.log('Multi-answer check:', {
-                question: currentQuestion.question.substring(0, 50),
-                correctAnswerArray,
-                correctAnswers,
-                selected,
-                correctAnswerRaw: currentQuestion.correctAnswer
-            });
             
             isCorrect = correctAnswers.length === selected.length && 
                         correctAnswers.every((val, idx) => val === selected[idx]);
@@ -929,7 +951,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                     // Reset practice order and results to force reload
                     setPracticeOrder([]);
                     setQuestionResults({});
-                    console.log('Replaced all questions. Sample:', questionsWithIds[0]?.question?.substring(0, 50), 'Correct answer:', questionsWithIds[0]?.correctAnswer);
                     alert(`Successfully imported and replaced all questions with ${questionsWithIds.length} question(s)! Please restart your practice session.`);
                 } else {
                     // Merge with existing questions (update existing by ID or question text, add new ones)
@@ -944,9 +965,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                     const newQuestions = [];
                     const updatedQuestions = [];
                     
-                    console.log('Importing:', questionsToImport.length, 'questions');
-                    console.log('Existing:', savedManualQuestions.length, 'questions');
-                    
                     questionsToImport.forEach((q, idx) => {
                         // Ensure imported question has an ID
                         if (!q.id) {
@@ -959,7 +977,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                         if (existingIds.has(q.id)) {
                             // Update existing question by ID
                             updatedQuestions.push(q);
-                            console.log(`[${idx}] Updating by ID:`, q.id, 'Old:', existingByQuestionText.get(questionTextKey)?.correctAnswer, 'New:', q.correctAnswer);
                         } else if (existingByQuestionText.has(questionTextKey)) {
                             // Match by question text if ID doesn't match
                             const existingQuestion = existingByQuestionText.get(questionTextKey);
@@ -969,11 +986,9 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                                 id: existingQuestion.id // Keep existing ID to maintain references
                             };
                             updatedQuestions.push(updatedQuestion);
-                            console.log(`[${idx}] Updating by text:`, existingQuestion.id, 'Question:', q.question.substring(0, 60), 'Old:', existingQuestion.correctAnswer, 'New:', q.correctAnswer);
                         } else {
                             // New question
                             newQuestions.push(q);
-                            console.log(`[${idx}] New question:`, q.question.substring(0, 60));
                         }
                     });
 
@@ -986,11 +1001,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                             ...savedManualQuestions.map(q => updatedMap.get(q.id) || q),
                             ...newQuestions
                         ];
-                        
-                        console.log('Final questions count:', finalQuestions.length, 'Updated:', updatedQuestions.length, 'New:', newQuestions.length);
-                        if (updatedQuestions.length > 0) {
-                            console.log('Sample updated question:', updatedQuestions[0]?.question?.substring(0, 50), 'New correctAnswer:', updatedQuestions[0]?.correctAnswer);
-                        }
                         
                         setSavedManualQuestions(finalQuestions);
                         // Reset practice order and results to force reload
@@ -1010,7 +1020,6 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                     }
                 }
             } catch (err) {
-                console.error('Import error:', err);
                 setError(`Failed to import: ${err.message}`);
             }
         };
@@ -1104,14 +1113,11 @@ Order questions so that:
             // Check if response was truncated
             const stopReason = data.stop_reason;
             if (stopReason === 'max_tokens') {
-                console.warn('Response was truncated due to max_tokens limit');
             }
             
             let responseText = data.content[0].text;
             
             // Log the response length for debugging
-            console.log(`AI Response length: ${responseText.length} characters`);
-            console.log(`Total questions: ${savedManualQuestions.length}`);
             
             responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
             
@@ -1126,8 +1132,6 @@ Order questions so that:
             try {
                 parsedData = JSON.parse(responseText);
             } catch (parseError) {
-                console.warn('JSON parse failed, attempting to fix incomplete JSON:', parseError.message);
-                console.log('Response text (first 500 chars):', responseText.substring(0, 500));
                 
                 // Try to extract orderedIds array even if JSON is incomplete
                 // Look for orderedIds with an array that might be incomplete
@@ -1141,23 +1145,16 @@ Order questions so that:
                     const idMatches = idsText.match(/"([^"]+)"/g);
                     const extractedIds = idMatches ? idMatches.map(m => m.replace(/"/g, '')) : [];
                     
-                    console.log(`Extracted ${extractedIds.length} IDs from incomplete JSON`);
-                    console.log('Extracted IDs:', extractedIds);
                     
                     // Use extracted IDs and add missing ones
                     const allQuestionIds = savedManualQuestions.map(q => q.id);
                     const missingIds = allQuestionIds.filter(id => !extractedIds.includes(id));
                     
-                    console.log(`Adding ${missingIds.length} missing IDs`);
-                    
                     parsedData = {
                         orderedIds: [...extractedIds, ...missingIds]
                     };
-                    
-                    console.log(`Final orderedIds count: ${parsedData.orderedIds.length} (should be ${allQuestionIds.length})`);
                 } else {
                     // If we can't extract orderedIds, just use all questions in original order
-                    console.warn('Could not extract orderedIds from response. Using all questions in original order.');
                     const allQuestionIds = savedManualQuestions.map(q => q.id);
                     parsedData = {
                         orderedIds: allQuestionIds
@@ -1169,20 +1166,17 @@ Order questions so that:
             const allQuestionIds = savedManualQuestions.map(q => q.id);
             let orderedIds = parsedData.orderedIds || [];
             
-            console.log(`Ordered IDs received: ${orderedIds.length}`);
             
             // Find missing IDs that weren't in the ordered list
             const missingIds = allQuestionIds.filter(id => !orderedIds.includes(id));
             
             if (missingIds.length > 0) {
-                console.warn(`Warning: ${missingIds.length} questions were not in the ordered list. Adding them at the end.`);
                 // Add missing IDs at the end
                 orderedIds = [...orderedIds, ...missingIds];
             }
             
             // Validate we have all questions - if not, use all questions
             if (orderedIds.length !== allQuestionIds.length) {
-                console.warn(`Warning: Expected ${allQuestionIds.length} questions but got ${orderedIds.length}. Ensuring all questions are included.`);
                 // Merge to ensure all IDs are present (preserving AI order where possible)
                 const orderedSet = new Set(orderedIds);
                 const missingFromOrdered = allQuestionIds.filter(id => !orderedSet.has(id));
@@ -1192,14 +1186,12 @@ Order questions so that:
             // Final validation - must have all questions
             if (orderedIds.length === allQuestionIds.length) {
                 setPracticeOrder(orderedIds);
-                console.log(`Successfully ordered all ${orderedIds.length} questions`);
                 setQuestionResults({}); // Reset question results
                 setCurrentView('practice');
                 setCurrentQuestionIndex(0);
                 setScore({ correct: 0, total: 0 });
             } else {
                 // Fallback: use all questions in original order if AI ordering fails
-                console.error(`Failed to get all questions. Using original order. Expected ${allQuestionIds.length}, got ${orderedIds.length}`);
                 setPracticeOrder(allQuestionIds);
                 setQuestionResults({}); // Reset question results
                 setCurrentView('practice');
@@ -1207,7 +1199,6 @@ Order questions so that:
                 setScore({ correct: 0, total: 0 });
             }
         } catch (err) {
-            console.error('Error:', err);
             setError(`Failed to order questions: ${err.message}`);
         } finally {
             setIsOrdering(false);
@@ -1217,11 +1208,8 @@ Order questions so that:
     // Get ordered questions for practice
     const getOrderedQuestions = () => {
         if (practiceOrder.length === 0) {
-            console.log('No practice order set, returning all questions:', savedManualQuestions.length);
             return savedManualQuestions;
         }
-        
-        console.log(`Practice order length: ${practiceOrder.length}, Total questions: ${savedManualQuestions.length}`);
         
         const orderMap = {};
         practiceOrder.forEach((id, index) => {
@@ -1234,16 +1222,12 @@ Order questions so that:
             return aOrder - bOrder;
         });
         
-        console.log(`Returning ${ordered.length} ordered questions`);
-        
         // Ensure we return all questions, even if not in practiceOrder
         if (ordered.length !== savedManualQuestions.length) {
-            console.warn(`Warning: getOrderedQuestions returned ${ordered.length} but expected ${savedManualQuestions.length}`);
             // Find missing questions and add them at the end
             const orderedIds = new Set(ordered.map(q => q.id));
             const missing = savedManualQuestions.filter(q => !orderedIds.has(q.id));
             ordered.push(...missing);
-            console.log(`Added ${missing.length} missing questions. Total now: ${ordered.length}`);
         }
         
         return ordered;
@@ -1442,7 +1426,6 @@ Order questions so that:
                                                         startIndex = firstUnanswered;
                                                     }
                                                 } catch (e) {
-                                                    console.error('Error parsing saved results:', e);
                                                 }
                                             }
                                             
@@ -2113,15 +2096,6 @@ Order questions so that:
                                     : [currentQuestion.correctAnswer];
                                 const correctAnswers = [...correctAnswerArray].sort((a, b) => a - b);
                                 const selected = [...selectedAnswers].sort((a, b) => a - b);
-                                
-                                // Debug logging
-                                console.log('Multi-answer feedback check:', {
-                                    question: currentQuestion.question.substring(0, 50),
-                                    correctAnswerArray,
-                                    correctAnswers,
-                                    selected,
-                                    correctAnswerRaw: currentQuestion.correctAnswer
-                                });
                                 
                                 isCorrect = correctAnswers.length === selected.length && 
                                             correctAnswers.every((val, idx) => val === selected[idx]);
