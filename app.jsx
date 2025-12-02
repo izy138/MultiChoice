@@ -43,6 +43,9 @@ function App() {
     // API key modal state
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     
+    // Flag to track if we're auto-loading on first visit
+    const [isAutoLoading, setIsAutoLoading] = useState(false);
+    
     // API proxy URL - defaults to local proxy server
     const API_BASE_URL = 'http://localhost:3001/api/anthropic';
     
@@ -132,8 +135,13 @@ function App() {
                 };
             });
 
+            // Update savedManualQuestions
             setSavedManualQuestions(questionsWithIds);
             setError('');
+            
+            // Wait a moment to ensure all state updates complete before resolving
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             return true;
         } catch (error) {
             const errorMessage = error.message || 'Unknown error occurred';
@@ -187,10 +195,15 @@ function App() {
         }
         
         if (shouldAutoLoadDefault) {
+            // Set flag to prevent premature saves
+            setIsAutoLoading(true);
             // Try to load the default file after state is initialized
             // Use a slightly longer delay to ensure all state initialization is complete
             setTimeout(() => {
-                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).catch((err) => {
+                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).then(() => {
+                    setIsAutoLoading(false);
+                }).catch((err) => {
+                    setIsAutoLoading(false);
                     // Show error to user if auto-load fails
                     setError(`Failed to auto-load questions: ${err.message}. Please import manually using the Import button.`);
                 });
@@ -266,12 +279,12 @@ function App() {
         }
     }, []);
 
-    // Save question sets to localStorage
+    // Save question sets to localStorage (but skip during auto-load to prevent race condition)
     useEffect(() => {
-        if (Object.keys(questionSets).length > 0) {
+        if (!isAutoLoading && Object.keys(questionSets).length > 0) {
             localStorage.setItem('questionSets', JSON.stringify(questionSets));
         }
-    }, [questionSets]);
+    }, [questionSets, isAutoLoading]);
 
     // Save current set ID to localStorage
     useEffect(() => {
