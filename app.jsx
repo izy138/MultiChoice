@@ -56,7 +56,14 @@ function App() {
     const loadQuestionsFromJSON = async (urlOrPath, customSetName = null) => {
         try {
             // If it's a full URL, fetch it. Otherwise, treat as relative path
-            const url = urlOrPath.startsWith('http') ? urlOrPath : urlOrPath;
+            let url = urlOrPath;
+            if (!url.startsWith('http')) {
+                // URL encode the filename to handle spaces and special characters
+                const pathParts = urlOrPath.split('/');
+                const filename = pathParts.pop();
+                const encodedFilename = encodeURIComponent(filename);
+                url = pathParts.length > 0 ? pathParts.join('/') + '/' + encodedFilename : encodedFilename;
+            }
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`Failed to load: ${response.statusText}`);
@@ -129,8 +136,10 @@ function App() {
             setError('');
             return true;
         } catch (error) {
-            setError(`Failed to load questions: ${error.message}`);
-            return false;
+            const errorMessage = error.message || 'Unknown error occurred';
+            setError(`Failed to load questions: ${errorMessage}`);
+            // Re-throw so caller can handle it
+            throw error;
         }
     };
 
@@ -160,14 +169,30 @@ function App() {
             });
         }
         
-        // Auto-load default questions file for first-time visitors (if no question sets exist)
-        const shouldAutoLoadDefault = !savedQuestionSets && !loadParam;
+        // Auto-load default questions file for first-time visitors (if no question sets exist or all sets are empty)
+        let shouldAutoLoadDefault = !savedQuestionSets && !loadParam;
+        if (savedQuestionSets && !loadParam) {
+            // Check if all existing sets are empty
+            try {
+                const parsed = JSON.parse(savedQuestionSets);
+                const allSetsEmpty = Object.keys(parsed).length === 0 || 
+                    Object.values(parsed).every(set => !set.questions || set.questions.length === 0);
+                if (allSetsEmpty) {
+                    shouldAutoLoadDefault = true;
+                }
+            } catch (e) {
+                // If parsing fails, treat as no sets
+                shouldAutoLoadDefault = true;
+            }
+        }
+        
         if (shouldAutoLoadDefault) {
             // Try to load the default file after state is initialized
             // Use a slightly longer delay to ensure all state initialization is complete
             setTimeout(() => {
-                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).catch(() => {
-                    // Silently fail if file doesn't exist - user can still import manually
+                loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME).catch((err) => {
+                    // Show error to user if auto-load fails
+                    setError(`Failed to auto-load questions: ${err.message}. Please import manually using the Import button.`);
                 });
             }, 200);
         }
