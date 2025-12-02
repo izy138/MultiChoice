@@ -1383,7 +1383,11 @@ Order questions so that:
                                                         ✏️
                                                     </button>
                                                     <button
-                                                        onClick={() => deleteQuestionSet(setId)}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            deleteQuestionSet(setId);
+                                                        }}
                                                         className="text-red-600 hover:text-red-800 text-sm px-2"
                                                         disabled={Object.keys(questionSets).length === 1}
                                                     >
