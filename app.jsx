@@ -54,9 +54,12 @@ function App() {
     
     // Default name for the auto-loaded question set
     const DEFAULT_QUESTIONS_SET_NAME = 'OS Final Exam Practice';
+    
+    // Key for storing the version of the loaded questions file
+    const QUESTIONS_VERSION_KEY = 'questionsFileVersion';
 
     // Helper function to load questions from JSON file (URL or local file)
-    const loadQuestionsFromJSON = async (urlOrPath, customSetName = null) => {
+    const loadQuestionsFromJSON = async (urlOrPath, customSetName = null, checkVersion = false) => {
         try {
             // If it's a full URL, fetch it. Otherwise, treat as relative path
             let url = urlOrPath;
@@ -72,6 +75,28 @@ function App() {
                 throw new Error(`Failed to load: ${response.statusText}`);
             }
             const data = await response.json();
+            
+            // Check version if requested (for auto-load to detect updates)
+            if (checkVersion) {
+                const fileVersion = data.version || data.exportDate || null;
+                const storedVersion = localStorage.getItem(QUESTIONS_VERSION_KEY);
+                
+                // If file has a newer version, clear localStorage to force reload
+                if (fileVersion && storedVersion && fileVersion !== storedVersion) {
+                    // Clear all question-related data
+                    localStorage.removeItem('questionSets');
+                    localStorage.removeItem('currentSetId');
+                    localStorage.removeItem('questionResults');
+                    // Clear old format data too
+                    localStorage.removeItem('questions');
+                    localStorage.removeItem('manualQuestions');
+                }
+                
+                // Store the new version
+                if (fileVersion) {
+                    localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
+                }
+            }
             
             // Handle different import formats
             let questionsToImport = [];
@@ -197,50 +222,47 @@ function App() {
         // Load default questions immediately if needed - fetch data first, then set state all at once
         if (shouldAutoLoadDefault) {
             isAutoLoadingRef.current = true;
-            // Fetch the data first, then set state once with complete data
+            // Use loadQuestionsFromJSON with version checking enabled
+            loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME, true)
+                .then(() => {
+                    isAutoLoadingRef.current = false;
+                })
+                .catch((err) => {
+                    isAutoLoadingRef.current = false;
+                    setError(`Failed to auto-load questions: ${err.message}. Please import manually using the Import button.`);
+                });
+        } else if (savedQuestionSets && !loadParam) {
+            // Even if we have saved sets, check if the file has been updated
+            // This handles the case where user updates the JSON file
             (async () => {
                 try {
                     const url = DEFAULT_QUESTIONS_FILE.startsWith('http') 
                         ? DEFAULT_QUESTIONS_FILE 
                         : encodeURIComponent(DEFAULT_QUESTIONS_FILE);
                     const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
-                    const data = await response.json();
-                    
-                    let questionsToImport = [];
-                    if (Array.isArray(data)) {
-                        questionsToImport = data;
-                    } else if (data.questions && Array.isArray(data.questions)) {
-                        questionsToImport = data.questions;
-                    }
-                    
-                    if (questionsToImport.length > 0) {
-                        // Add IDs to questions
-                        const questionsWithIds = questionsToImport.map((q, index) => ({
-                            ...q,
-                            id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
-                        }));
+                    if (response.ok) {
+                        const data = await response.json();
+                        const fileVersion = data.version || data.exportDate || null;
+                        const storedVersion = localStorage.getItem(QUESTIONS_VERSION_KEY);
                         
-                        // Create set with questions all at once
-                        const setId = 'set-' + Date.now();
-                        const newSet = {
-                            name: DEFAULT_QUESTIONS_SET_NAME,
-                            questions: questionsWithIds,
-                            createdAt: Date.now()
-                        };
-                        
-                        // Set all state at once - no race condition
-                        setQuestionSets({ [setId]: newSet });
-                        setCurrentSetId(setId);
-                        setSavedManualQuestions(questionsWithIds);
-                        // Save to localStorage immediately since we have complete data
-                        localStorage.setItem('questionSets', JSON.stringify({ [setId]: newSet }));
-                        localStorage.setItem('currentSetId', setId);
+                        // If file version is different, reload the questions
+                        if (fileVersion && storedVersion && fileVersion !== storedVersion) {
+                            // Clear and reload
+                            localStorage.removeItem('questionSets');
+                            localStorage.removeItem('currentSetId');
+                            localStorage.removeItem('questionResults');
+                            localStorage.removeItem('questions');
+                            localStorage.removeItem('manualQuestions');
+                            localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
+                            
+                            // Reload the questions
+                            isAutoLoadingRef.current = true;
+                            await loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME, false);
+                            isAutoLoadingRef.current = false;
+                        }
                     }
                 } catch (err) {
-                    setError(`Failed to auto-load questions: ${err.message}. Please import manually using the Import button.`);
-                } finally {
-                    isAutoLoadingRef.current = false;
+                    // Silently fail - user can manually refresh if needed
                 }
             })();
         }
@@ -490,12 +512,12 @@ function App() {
     };
 
     const deleteQuestionSet = (setId) => {
-        if (Object.keys(questionSets).length === 1) {
-            setError('Cannot delete the last question set');
-            return;
-        }
+        const isLastSet = Object.keys(questionSets).length === 1;
+        const confirmMessage = isLastSet 
+            ? `Are you sure you want to delete the last question set "${questionSets[setId]?.name}"? This will clear all questions. You can refresh or import new questions afterward.`
+            : `Are you sure you want to delete "${questionSets[setId]?.name}"? This cannot be undone.`;
         
-        if (confirm(`Are you sure you want to delete "${questionSets[setId]?.name}"? This cannot be undone.`)) {
+        if (confirm(confirmMessage)) {
             const isDeletingCurrentSet = currentSetId === setId;
             const remainingSets = Object.keys(questionSets).filter(id => id !== setId);
             
@@ -503,7 +525,7 @@ function App() {
                 // Set loading flag to prevent save effect from running
                 isLoadingSetRef.current = true;
                 
-                // Get the new set's questions before deleting
+                // Get the new set's questions before deleting (if any remain)
                 const newSetId = remainingSets.length > 0 ? remainingSets[0] : null;
                 const newSetQuestions = newSetId && questionSets[newSetId] 
                     ? (questionSets[newSetId].questions || [])
@@ -521,8 +543,13 @@ function App() {
                     setCurrentSetId(newSetId);
                     setSavedManualQuestions(newSetQuestions);
                 } else {
+                    // No sets left - clear everything
                     setCurrentSetId(null);
                     setSavedManualQuestions([]);
+                    // Clear localStorage too
+                    localStorage.removeItem('questionSets');
+                    localStorage.removeItem('currentSetId');
+                    localStorage.removeItem('questionResults');
                 }
                 
                 // Reset loading flag after a brief delay
@@ -1344,12 +1371,95 @@ Order questions so that:
                                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Multiple Choice Practice</h1>
                                 <p className="text-gray-600 mb-6">Transform any study material into practice questions</p>
                             </div>
-                            <button
-                                onClick={() => setShowApiKeyModal(true)}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap"
-                            >
-                                {apiKey ? '✓ API Connected' : 'Connect API Key'}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            // Force refresh questions by clearing cache and reloading
+                                            localStorage.removeItem('questionSets');
+                                            localStorage.removeItem('currentSetId');
+                                            localStorage.removeItem('questionResults');
+                                            localStorage.removeItem(QUESTIONS_VERSION_KEY);
+                                            localStorage.removeItem('questions');
+                                            localStorage.removeItem('manualQuestions');
+                                            
+                                            // Clear state
+                                            setQuestionSets({});
+                                            setCurrentSetId(null);
+                                            setSavedManualQuestions([]);
+                                            setError('');
+                                            
+                                            // Set flag to prevent saves during load
+                                            isAutoLoadingRef.current = true;
+                                            
+                                            // Fetch and load data directly (similar to auto-load)
+                                            const url = DEFAULT_QUESTIONS_FILE.startsWith('http') 
+                                                ? DEFAULT_QUESTIONS_FILE 
+                                                : encodeURIComponent(DEFAULT_QUESTIONS_FILE);
+                                            const response = await fetch(url);
+                                            if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
+                                            const data = await response.json();
+                                            
+                                            // Check version
+                                            const fileVersion = data.version || data.exportDate || null;
+                                            if (fileVersion) {
+                                                localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
+                                            }
+                                            
+                                            // Extract questions
+                                            let questionsToImport = [];
+                                            if (Array.isArray(data)) {
+                                                questionsToImport = data;
+                                            } else if (data.questions && Array.isArray(data.questions)) {
+                                                questionsToImport = data.questions;
+                                            }
+                                            
+                                            if (questionsToImport.length > 0) {
+                                                // Add IDs to questions
+                                                const questionsWithIds = questionsToImport.map((q, index) => ({
+                                                    ...q,
+                                                    id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
+                                                }));
+                                                
+                                                // Create set with questions all at once
+                                                const setId = 'set-' + Date.now();
+                                                const newSet = {
+                                                    name: DEFAULT_QUESTIONS_SET_NAME,
+                                                    questions: questionsWithIds,
+                                                    createdAt: Date.now()
+                                                };
+                                                
+                                                // Set all state at once - no race condition
+                                                setQuestionSets({ [setId]: newSet });
+                                                setCurrentSetId(setId);
+                                                setSavedManualQuestions(questionsWithIds);
+                                                
+                                                // Save to localStorage immediately since we have complete data
+                                                localStorage.setItem('questionSets', JSON.stringify({ [setId]: newSet }));
+                                                localStorage.setItem('currentSetId', setId);
+                                            } else {
+                                                throw new Error('No questions found in file');
+                                            }
+                                            
+                                            // Clear flag
+                                            isAutoLoadingRef.current = false;
+                                        } catch (err) {
+                                            isAutoLoadingRef.current = false;
+                                            setError(`Failed to refresh questions: ${err.message}`);
+                                        }
+                                    }}
+                                    className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-xs font-medium"
+                                    title="Refresh questions from file (clears cache)"
+                                >
+                                    🔄 Refresh
+                                </button>
+                                <button
+                                    onClick={() => setShowApiKeyModal(true)}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap"
+                                >
+                                    {apiKey ? '✓ API Connected' : 'Connect API Key'}
+                                </button>
+                            </div>
                         </div>
                         
                         {/* Question Set Management */}
@@ -1467,7 +1577,6 @@ Order questions so that:
                                                             deleteQuestionSet(setId);
                                                         }}
                                                         className="text-red-600 hover:text-red-800 text-sm px-2"
-                                                        disabled={Object.keys(questionSets).length === 1}
                                                     >
                                                         🗑️
                                                     </button>
