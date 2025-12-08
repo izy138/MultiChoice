@@ -173,6 +173,147 @@
       "id": "176470413591114wiq91xoth"
     },
     {
+      "question": "Copy-on-Write (COW) is used for: (Select all that apply)",
+      "options": [
+        "Creating copies of pages only when modifications occur",
+        "Sharing pages between parent and child processes",
+        "Reducing memory usage by sharing unmodified pages",
+        "Efficient process creation during fork()"
+      ],
+      "correctAnswer": [0, 1, 2, 3],
+      "explanation": "Copy-on-Write is a memory optimization technique that allows parent and child processes to share the same physical pages until one of them modifies the page. This reduces memory usage, enables efficient process creation during fork(), and only creates copies when modifications occur."
+    },
+    {
+      "question": "What occurs when a program attempts to reference a non-resident page?",
+      "options": [
+        "Page fault",
+        "Page replacement",
+        "Error handling",
+        "Table segmentation"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A page fault is a hardware exception that occurs when a process attempts to access a page that is not currently in physical memory. The operating system then handles this fault by loading the required page from secondary storage."
+    },
+    {
+      "question": "What is the difference between main memory and secondary storage?",
+      "options": [
+        "Main memory and secondary storage are the same thing",
+        "Main memory is volatile and faster than secondary storage, while secondary storage is non-volatile and slower",
+        "Main memory is non-volatile and slower than secondary storage, while secondary storage is volatile and faster",
+        "Main memory is used for permanent storage, while secondary storage is used for temporary storage"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Main memory (RAM) is volatile, meaning it loses data when power is lost, but provides fast access times. Secondary storage (like hard drives or SSDs) is non-volatile, retaining data without power, but has slower access times compared to main memory."
+    },
+    {
+      "question": "In demand paging,",
+      "options": [
+        "a page is loaded in memory just before it is needed",
+        "all pages that a program will access during execution are loaded in memory in the beginning",
+        "a page loaded in memory may never be accessed",
+        "a page is loaded in memory only when it is needed during execution"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Demand paging is a lazy swapping technique where pages are loaded into memory only when they are actually needed (on-demand) during program execution. This reduces initial load time and memory usage by not loading pages that may never be accessed."
+    },
+    {
+      "question": "Which page replacement algorithm ensures the lowest page fault rate if the future page requests are known?",
+      "options": [
+        "FIFO",
+        "Least Frequently Used (LFU)",
+        "LRU",
+        "Optimal Page Replacement"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The Optimal Page Replacement algorithm (also known as Bélády's algorithm) replaces the page that will not be used for the longest period of time in the future. This guarantees the lowest possible page fault rate, but is not practical to implement since future page requests are typically unknown."
+    },
+    {
+      "question": "What is the Working Set Model used for?",
+      "options": [
+        "Optimizing disk access",
+        "Preventing thrashing",
+        "Increasing CPU utilization",
+        "Reducing page table size"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Working Set Model tracks the set of pages that a process is actively using during a time window. By ensuring sufficient frames are allocated to hold a process's working set, the system can prevent thrashing—a state where the system spends more time swapping pages than executing processes."
+    },
+    {
+      "question": "What is the primary disadvantage of a page table in a system with a large address space?",
+      "options": [
+        "It causes too many page faults",
+        "It requires too much contiguous physical memory",
+        "It is too slow for address translation",
+        "It doesn't support virtual memory"
+      ],
+      "correctAnswer": 1,
+      "explanation": "In systems with large address spaces (such as 64-bit systems), a single-level page table would be enormous and require too much contiguous physical memory to store. This is why hierarchical or multi-level page tables are used to reduce the memory overhead."
+    },
+    {
+      "question": "When a page fault occurs, the operating system suspends the faulting process until the page is loaded.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "When a page fault occurs, the process that caused it must be suspended (blocked) while the operating system loads the required page from secondary storage into main memory. Once the page is loaded and the page table is updated, the process can resume execution."
+    },
+    {
+      "question": "Compile-time binding is the most memory-efficient binding mechanism when multiple programs are running simultaneously.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Compile-time binding assigns absolute physical addresses at compile time, which means programs must be loaded at specific memory locations. This is very inflexible and inefficient for multiprogramming environments. Dynamic binding (load-time or execution-time) is much more memory-efficient as it allows flexible memory allocation."
+    },
+    {
+      "question": "Enhanced Second Chance algorithm considers both the reference bit and the modify bit when selecting pages for replacement.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Enhanced Second Chance (or Clock) algorithm improves upon the basic Second Chance algorithm by considering both the reference bit (whether the page was recently accessed) and the modify bit (whether the page was modified). This creates four classes of pages, with preference given to replacing unreferenced, unmodified pages."
+    },
+    {
+      "question": "The Least Recently Used (LRU) page replacement algorithm replaces the page that has been used least recently.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "LRU is based on the principle of temporal locality—pages that have been used recently are likely to be used again soon. Therefore, LRU replaces the page that has not been accessed for the longest period of time, assuming it's less likely to be needed in the near future."
+    },
+    {
+      "question": "Best-fit creates the smallest leftover fragments, which can lead to more unusable small fragments over time.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Best-fit allocation selects the smallest available memory block that can accommodate the request. While this seems efficient, it tends to create many small leftover fragments that are too small to be useful for future allocations, leading to external fragmentation over time."
+    },
+    {
+      "question": "A hierarchical page table structure is used to reduce the memory needed for page tables.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Hierarchical (multi-level) page tables break the page table into smaller pieces, allowing the system to allocate only the portions of the page table that are actually needed. This significantly reduces memory overhead compared to a single large page table, especially for sparse address spaces."
+    },
+    {
+      "question": "Memory fragmentation can sometimes increase using paging technique.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Paging eliminates external fragmentation because all frames are the same size, and any page can fit into any available frame. However, paging can cause internal fragmentation within the last page of a process if it doesn't completely fill the page. Overall, paging significantly reduces fragmentation issues compared to other memory allocation schemes."
+    },
+  
+    {
       "question": "The 50-percent rule in memory allocation refers to fragmentation losses. This property is typically observed in which of the following memory allocation strategies?",
       "options": [
         "Next Fit",
