@@ -43,6 +43,27 @@ function App() {
     // API key modal state
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     
+    // Dark mode state
+    const [darkMode, setDarkMode] = useState(() => {
+        const saved = localStorage.getItem('darkMode');
+        return saved ? JSON.parse(saved) : false;
+    });
+    
+    // Apply dark mode to HTML element
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    }, [darkMode]);
+    
+    // Toggle dark mode function
+    const toggleDarkMode = () => {
+        setDarkMode(prev => !prev);
+    };
+    
     // Flag to track if we're auto-loading on first visit
     const isAutoLoadingRef = React.useRef(false);
     
@@ -1362,16 +1383,23 @@ Order questions so that:
     // Setup View
     if (currentView === 'setup') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-xl p-8 relative">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 relative">
                         {/* Header with Connect API Key button */}
                         <div className="flex justify-between items-start mb-2">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Multiple Choice Practice</h1>
-                                <p className="text-gray-600 mb-6">Transform any study material into practice questions</p>
+                                <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Multiple Choice Practice</h1>
+                                <p className="text-gray-600 dark:text-gray-300 mb-6">Transform any study material into practice questions</p>
                             </div>
                             <div className="flex gap-2">
+                                <button
+                                    onClick={toggleDarkMode}
+                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium"
+                                    title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                                >
+                                    {darkMode ? "☀️" : "🌙"}
+                                </button>
                                 <button
                                     onClick={async () => {
                                         try {
@@ -1463,8 +1491,8 @@ Order questions so that:
                         </div>
                         
                         {/* Question Set Management */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Question Sets
                             </label>
                             
@@ -1476,7 +1504,7 @@ Order questions so that:
                                         value={newSetName}
                                         onChange={(e) => setNewSetName(e.target.value)}
                                         placeholder="New set name..."
-                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
                                         onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                     />
                                     <button
@@ -1494,8 +1522,8 @@ Order questions so that:
                                             key={setId}
                                             className={`flex items-center justify-between p-3 rounded-lg border ${
                                                 currentSetId === setId
-                                                    ? 'bg-blue-50 border-blue-300'
-                                                    : 'bg-white border-gray-200'
+                                                    ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600'
+                                                    : 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500'
                                             }`}
                                         >
                                             <div className="flex-1">
@@ -1505,12 +1533,12 @@ Order questions so that:
                                                             type="text"
                                                             value={editingSetName}
                                                             onChange={(e) => setEditingSetName(e.target.value)}
-                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-500 rounded text-sm dark:bg-gray-700 dark:text-white"
                                                             onKeyPress={(e) => e.key === 'Enter' && renameQuestionSet(setId)}
                                                         />
                                                         <button
                                                             onClick={() => renameQuestionSet(setId)}
-                                                            className="text-green-600 hover:text-green-800 text-sm px-2"
+                                                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm px-2"
                                                         >
                                                             ✓
                                                         </button>
@@ -1519,7 +1547,7 @@ Order questions so that:
                                                                 setEditingSetId(null);
                                                                 setEditingSetName('');
                                                             }}
-                                                            className="text-gray-600 hover:text-gray-800 text-sm px-2"
+                                                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm px-2"
                                                         >
                                                             ✕
                                                         </button>
@@ -1528,7 +1556,7 @@ Order questions so that:
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => selectQuestionSet(setId)}
-                                                            className="text-left flex-1 text-sm font-medium text-gray-800 hover:text-blue-600"
+                                                            className="text-left flex-1 text-sm font-medium text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                                                         >
                                                             {set.name} ({set.questions?.length || 0} questions)
                                                         </button>
@@ -1566,7 +1594,7 @@ Order questions so that:
                                                             setEditingSetId(setId);
                                                             setEditingSetName(set.name);
                                                         }}
-                                                        className="text-blue-600 hover:text-blue-800 text-sm px-2"
+                                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm px-2"
                                                     >
                                                         ✏️
                                                     </button>
@@ -1576,7 +1604,7 @@ Order questions so that:
                                                             e.stopPropagation();
                                                             deleteQuestionSet(setId);
                                                         }}
-                                                        className="text-red-600 hover:text-red-800 text-sm px-2"
+                                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2"
                                                     >
                                                         🗑️
                                                     </button>
@@ -1587,7 +1615,7 @@ Order questions so that:
                                 </div>
                                 
                                 {Object.keys(questionSets).length === 0 && (
-                                    <div className="text-sm text-gray-500 text-center py-4">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                                         No question sets yet. Create one to get started!
                                     </div>
                                 )}
@@ -1646,7 +1674,7 @@ Order questions so that:
                         {/* API Key Modal */}
                         {showApiKeyModal && (
                             <div 
-                                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                                className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50"
                                 onClick={(e) => {
                                     if (e.target === e.currentTarget) {
                                         setShowApiKeyModal(false);
@@ -1655,24 +1683,24 @@ Order questions so that:
                                 }}
                             >
                                 <div 
-                                    className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-xl font-bold text-gray-800">Connect Claude API</h2>
+                                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Connect Claude API</h2>
                                         <button
                                             onClick={() => {
                                                 setShowApiKeyModal(false);
                                                 setError('');
                                             }}
-                                            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                                            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none"
                                         >
                                             ×
                                         </button>
                                     </div>
                                     
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Claude API Key
                                         </label>
                                         <input
@@ -1680,10 +1708,10 @@ Order questions so that:
                                             value={apiKey}
                                             onChange={(e) => setApiKey(e.target.value)}
                                             placeholder="sk-ant-..."
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                                         />
-                                        <p className="text-sm text-gray-500 mt-2">
-                                            Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 hover:underline">console.anthropic.com</a>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                            Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">console.anthropic.com</a>
                                         </p>
                                     </div>
 
@@ -1713,7 +1741,7 @@ Order questions so that:
                                     </button>
                                     
                                     {error && (
-                                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
+                                        <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-2 rounded text-sm mt-4">
                                             {error}
                                         </div>
                                     )}
@@ -1723,7 +1751,7 @@ Order questions so that:
                         
                         {/* Error display - always visible */}
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
+                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-2 rounded text-sm mt-4">
                                 {error}
                             </div>
                         )}
@@ -1736,24 +1764,24 @@ Order questions so that:
     // Generate View
     if (currentView === 'generate') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-xl p-8">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
-                            className="mb-4 text-blue-600 hover:text-blue-800 flex items-center"
+                            className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
                         >
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Enter Study Material</h2>
-                        <p className="text-gray-600 mb-4">
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Enter Study Material</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">
                             Paste your notes, textbook content, or any material you want to study. The AI will convert it into multiple choice questions.
                         </p>
 
                         {/* Set Selector */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Select or Create Question Set
                             </label>
                             
@@ -1764,7 +1792,7 @@ Order questions so that:
                                     value={newSetName}
                                     onChange={(e) => setNewSetName(e.target.value)}
                                     placeholder="New set name..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
                                     onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                 />
                                 <button
@@ -1778,7 +1806,7 @@ Order questions so that:
                             {/* Select existing set */}
                             {Object.keys(questionSets).length > 0 && (
                                 <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
                                         Or select existing set:
                                     </label>
                                     <select
@@ -1788,7 +1816,7 @@ Order questions so that:
                                                 selectQuestionSet(e.target.value);
                                             }
                                         }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white"
                                     >
                                         <option value="">-- Select a set --</option>
                                         {Object.entries(questionSets).map(([setId, set]) => (
@@ -1801,7 +1829,7 @@ Order questions so that:
                             )}
                             
                             {currentSetId && questionSets[currentSetId] && (
-                                <div className="mt-3 text-sm font-semibold text-blue-700">
+                                <div className="mt-3 text-sm font-semibold text-blue-700 dark:text-blue-400">
                                     ✓ Selected: {questionSets[currentSetId].name}
                                 </div>
                             )}
@@ -1811,11 +1839,11 @@ Order questions so that:
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             placeholder="Example: The mitochondria is the powerhouse of the cell. It produces ATP through cellular respiration..."
-                            className="w-full h-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                            className="w-full h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                         />
 
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
                                 {error}
                             </div>
                         )}
@@ -1841,21 +1869,21 @@ Order questions so that:
     // Manual Input View
     if (currentView === 'manual') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-xl p-8">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
-                            className="mb-4 text-blue-600 hover:text-blue-800 flex items-center"
+                            className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
                         >
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Add Question Manually</h2>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Add Question Manually</h2>
 
                         {/* Set Selector */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Select or Create Question Set
                             </label>
                             
@@ -1866,7 +1894,7 @@ Order questions so that:
                                     value={newSetName}
                                     onChange={(e) => setNewSetName(e.target.value)}
                                     placeholder="New set name..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
                                     onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                 />
                                 <button
@@ -1880,7 +1908,7 @@ Order questions so that:
                             {/* Select existing set */}
                             {Object.keys(questionSets).length > 0 && (
                                 <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
                                         Or select existing set:
                                     </label>
                                     <select
@@ -1890,7 +1918,7 @@ Order questions so that:
                                                 selectQuestionSet(e.target.value);
                                             }
                                         }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white"
                                     >
                                         <option value="">-- Select a set --</option>
                                         {Object.entries(questionSets).map(([setId, set]) => (
@@ -1910,21 +1938,21 @@ Order questions so that:
                         </div>
 
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
                                 {error}
                             </div>
                         )}
 
                         <div className="space-y-4 mb-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Question
                                 </label>
                                 <textarea
                                     value={manualQuestion.question}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, question: e.target.value }))}
                                     placeholder="Enter your question here..."
-                                    className="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full h-24 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                                 />
                             </div>
 
@@ -1943,11 +1971,11 @@ Order questions so that:
                                         }}
                                         className="w-4 h-4 text-blue-600"
                                     />
-                                    <label htmlFor="isMultiAnswer" className="text-sm font-medium text-gray-700">
+                                    <label htmlFor="isMultiAnswer" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Select all that apply (multi-answer question)
                                     </label>
                                 </div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Answer Choices
                                 </label>
                                 {manualQuestion.options.map((option, index) => (
@@ -1982,12 +2010,12 @@ Order questions so that:
                                             value={option}
                                             onChange={(e) => updateOption(index, e.target.value)}
                                             placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                                         />
                                         {manualQuestion.options.length > 2 && (
                                             <button
                                                 onClick={() => removeOption(index)}
-                                                className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition"
                                             >
                                                 Remove
                                             </button>
@@ -1996,21 +2024,21 @@ Order questions so that:
                                 ))}
                                 <button
                                     onClick={addOption}
-                                    className="mt-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition border border-blue-300"
+                                    className="mt-2 px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition border border-blue-300 dark:border-blue-600"
                                 >
                                     + Add Option
                                 </button>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Explanation (Optional)
                                 </label>
                                 <textarea
                                     value={manualQuestion.explanation}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, explanation: e.target.value }))}
                                     placeholder="Explain why the correct answer is correct..."
-                                    className="w-full h-20 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full h-20 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                                 />
                             </div>
                         </div>
@@ -2023,15 +2051,15 @@ Order questions so that:
                             Save Question
                         </button>
                         {!currentSetId && (
-                            <p className="text-sm text-red-600 mb-4 text-center">
+                            <p className="text-sm text-red-600 dark:text-red-400 mb-4 text-center">
                                 Please select or create a question set first
                             </p>
                         )}
 
                         {savedManualQuestions.length > 0 && (
-                            <div className="mt-8 border-t pt-6">
+                            <div className="mt-8 border-t dark:border-gray-600 pt-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-800">
+                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                                         Saved Questions ({savedManualQuestions.length})
                                     </h3>
                                     <div className="flex gap-2 flex-wrap">
@@ -2054,17 +2082,17 @@ Order questions so that:
                                 </div>
                                 <div className="space-y-3 max-h-96 overflow-y-auto">
                                     {savedManualQuestions.map((q) => (
-                                        <div key={q.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                        <div key={q.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
                                             <div className="flex justify-between items-start mb-2">
-                                                <p className="font-medium text-gray-800 flex-1">{q.question}</p>
+                                                <p className="font-medium text-gray-800 dark:text-white flex-1">{q.question}</p>
                                                 <button
                                                     onClick={() => deleteManualQuestion(q.id)}
-                                                    className="ml-4 text-red-600 hover:text-red-800 text-sm"
+                                                    className="ml-4 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm"
                                                 >
                                                     Delete
                                                 </button>
                                             </div>
-                                            <div className="text-sm text-gray-600">
+                                            <div className="text-sm text-gray-600 dark:text-gray-300">
                                                 <span className="mr-4">
                                                     Answered: {q.timesAnswered || 0} times
                                                 </span>
@@ -2101,10 +2129,10 @@ Order questions so that:
         }
         if (currentQuestions.length === 0) {
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                     <div className="max-w-2xl mx-auto">
-                        <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-                            <p className="text-gray-600 mb-4">No questions available for practice.</p>
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 text-center">
+                            <p className="text-gray-600 dark:text-gray-300 mb-4">No questions available for practice.</p>
                             <button
                                 onClick={() => setCurrentView('setup')}
                                 className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
@@ -2125,17 +2153,17 @@ Order questions so that:
         };
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex gap-4">
                         {/* Sidebar - Question List */}
                         {showSidebar && (
-                            <div className="w-64 bg-white rounded-lg shadow-xl p-4 h-fit sticky top-4">
+                            <div className="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 h-fit sticky top-4">
                                 <div className="flex justify-between items-center mb-3">
-                                    <h3 className="font-semibold text-gray-800 text-sm">Questions</h3>
+                                    <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Questions</h3>
                                     <button
                                         onClick={() => setShowSidebar(false)}
-                                        className="text-gray-400 hover:text-gray-600 text-sm"
+                                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm"
                                     >
                                         ✕
                                     </button>
@@ -2146,27 +2174,27 @@ Order questions so that:
                                         const isCurrent = index === currentQuestionIndex;
                                         const questionId = q.id || `ai-${index}`;
                                         
-                                        let bgColor = "bg-gray-50";
-                                        if (isCurrent) bgColor = "bg-blue-100 border-2 border-blue-500";
-                                        else if (result === true) bgColor = "bg-green-50";
-                                        else if (result === false) bgColor = "bg-red-50";
+                                        let bgColor = "bg-gray-50 dark:bg-gray-700";
+                                        if (isCurrent) bgColor = "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 dark:border-blue-400";
+                                        else if (result === true) bgColor = "bg-green-50 dark:bg-green-900";
+                                        else if (result === false) bgColor = "bg-red-50 dark:bg-red-900";
                                         
                                         return (
                                             <button
                                                 key={questionId}
                                                 onClick={() => jumpToQuestion(index)}
-                                                className={`w-full text-left px-3 py-2 rounded text-sm transition ${bgColor} hover:bg-blue-100 flex items-center justify-between`}
+                                                className={`w-full text-left px-3 py-2 rounded text-sm transition ${bgColor} hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center justify-between`}
                                             >
                                                 <span className={`flex items-center ${isCurrent ? 'font-semibold' : ''}`}>
-                                                    <span className="mr-2 text-xs text-gray-500">#{index + 1}</span>
-                                                    <span className="truncate max-w-[150px]">
+                                                    <span className="mr-2 text-xs text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                                                    <span className="truncate max-w-[150px] text-gray-800 dark:text-white">
                                                         {q.question.substring(0, 30)}...
                                                     </span>
                                                 </span>
                                                 <span className="ml-2 flex-shrink-0">
-                                                    {result === true && <span className="text-green-600 font-bold">✓</span>}
-                                                    {result === false && <span className="text-red-600 font-bold">✗</span>}
-                                                    {result === undefined && <span className="text-gray-300">○</span>}
+                                                    {result === true && <span className="text-green-600 dark:text-green-400 font-bold">✓</span>}
+                                                    {result === false && <span className="text-red-600 dark:text-red-400 font-bold">✗</span>}
+                                                    {result === undefined && <span className="text-gray-300 dark:text-gray-600">○</span>}
                                                 </span>
                                             </button>
                                         );
@@ -2176,50 +2204,59 @@ Order questions so that:
                         )}
                         
                         {/* Main Content */}
-                        <div className={`flex-1 bg-white rounded-lg shadow-xl p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
+                        <div className={`flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
                             {!showSidebar && (
                                 <button
                                     onClick={() => setShowSidebar(true)}
-                                    className="mb-4 text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                                    className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
                                 >
                                     ☰ Show Question List
                                 </button>
                             )}
                         <div className="flex justify-between items-center mb-6">
-                            <button
-                                onClick={() => {
-                                    setCurrentView('setup');
-                                }}
-                                className="text-blue-600 hover:text-blue-800"
-                            >
-                                ← Exit Practice
-                            </button>
-                            <div className="text-sm text-gray-600">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        setCurrentView('setup');
+                                    }}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                >
+                                    ← Exit Practice
+                                </button>
+                                <button
+                                    onClick={toggleDarkMode}
+                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium"
+                                    title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                                >
+                                    {darkMode ? "☀️" : "🌙"}
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-300">
                                 Question {currentQuestionIndex + 1} of {currentQuestions.length}
                             </div>
                         </div>
 
                         <div className="mb-6">
-                            <div className="text-sm text-gray-500 mb-2">Score: {score.correct} / {score.total}</div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Score: {score.correct} / {score.total}</div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div
                                     className="bg-blue-600 h-2 rounded-full transition-all"
                                     style={{ width: `${((currentQuestionIndex + 1) / currentQuestions.length) * 100}%` }}
                                 ></div>
                             </div>
                             {currentQuestion.id && (
-                                <div className="text-xs text-gray-500 mt-2">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                     Answered {currentQuestion.timesAnswered || 0} times • 
                                     Correct {currentQuestion.timesCorrect || 0} times
                                 </div>
                             )}
                         </div>
 
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
                             {currentQuestion.question}
                         </h3>
                         {isMultiAnswer(currentQuestion) && (
-                            <p className="text-sm text-gray-600 mb-6 italic font-semibold bg-yellow-50 border border-yellow-200 px-3 py-2 rounded">
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 italic font-semibold bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 px-3 py-2 rounded">
                                 (Select all that apply - Multiple answers required)
                             </p>
                         )}
@@ -2236,18 +2273,18 @@ Order questions so that:
                                 
                                 if (!showAnswer) {
                                     if (isSelected) {
-                                        buttonClass += "border-blue-600 bg-blue-50";
+                                        buttonClass += "border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900";
                                     } else {
-                                        buttonClass += "border-gray-300 hover:border-blue-400";
+                                        buttonClass += "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500";
                                     }
                                 } else {
                                     // Show answer feedback
                                     if (isCorrectOption) {
-                                        buttonClass += "border-green-600 bg-green-50";
+                                        buttonClass += "border-green-600 dark:border-green-400 bg-green-50 dark:bg-green-900";
                                     } else if (isSelected && !isCorrectOption) {
-                                        buttonClass += "border-red-600 bg-red-50";
+                                        buttonClass += "border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900";
                                     } else {
-                                        buttonClass += "border-gray-300";
+                                        buttonClass += "border-gray-300 dark:border-gray-600";
                                     }
                                 }
 
@@ -2256,12 +2293,12 @@ Order questions so that:
                                         key={index}
                                         onClick={() => handleAnswerSelect(index, currentQuestion)}
                                         disabled={showAnswer}
-                                        className={buttonClass}
+                                        className={buttonClass + " text-gray-800 dark:text-white"}
                                     >
                                         <span className={`flex-shrink-0 mt-0.5 ${isMulti ? 'w-5 h-5 border-2 rounded' : 'w-5 h-5 border-2 rounded-full'} ${
                                             isSelected 
-                                                ? 'bg-blue-600 border-blue-600' 
-                                                : 'bg-white border-gray-400'
+                                                ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' 
+                                                : 'bg-white dark:bg-gray-700 border-gray-400 dark:border-gray-500'
                                         }`}>
                                             {isSelected && (
                                                 <span className="text-white text-xs flex items-center justify-center h-full">
@@ -2297,20 +2334,20 @@ Order questions so that:
                             return (
                                 <div className={`p-4 rounded-lg mb-6 ${
                                     isCorrect 
-                                        ? 'bg-green-100 border border-green-400' 
-                                        : 'bg-red-100 border border-red-400'
+                                        ? 'bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600' 
+                                        : 'bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600'
                                 }`}>
-                                    <p className="font-semibold mb-2">
+                                    <p className="font-semibold mb-2 text-gray-800 dark:text-white">
                                         {isCorrect ? '✓ Correct!' : '✗ Incorrect'}
                                     </p>
                                     {!isCorrect && isMulti && (
-                                        <p className="text-sm mb-2">
+                                        <p className="text-sm mb-2 text-gray-700 dark:text-gray-300">
                                             Correct answers: {Array.isArray(currentQuestion.correctAnswer) 
                                                 ? currentQuestion.correctAnswer.map(i => String.fromCharCode(65 + i)).join(', ')
                                                 : String.fromCharCode(65 + currentQuestion.correctAnswer)}
                                         </p>
                                     )}
-                                    <p className="text-sm">{currentQuestion.explanation}</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">{currentQuestion.explanation}</p>
                                 </div>
                             );
                         })()}
@@ -2347,16 +2384,16 @@ Order questions so that:
         const percentage = Math.round((score.correct / score.total) * 100);
         
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 text-center">
+                        <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">
                             Practice Complete!
                         </h2>
                         
                         <div className="my-8">
-                            <div className="text-6xl font-bold text-blue-600 mb-2">{percentage}%</div>
-                            <div className="text-xl text-gray-600">
+                            <div className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">{percentage}%</div>
+                            <div className="text-xl text-gray-600 dark:text-gray-300">
                                 {score.correct} out of {score.total} correct
                             </div>
                         </div>
