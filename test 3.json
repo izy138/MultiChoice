@@ -1,7 +1,7 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "exportDate": "2025-12-02T19:37:29.462Z",
-  "questionCount": 108,
+  "questionCount": 121,
   "questions": [
     {
       "question": "Which of the following statements about address translation during program execution are correct? (Select all that apply)",
@@ -312,7 +312,135 @@
       "correctAnswer": 0,
       "explanation": "Paging eliminates external fragmentation because all frames are the same size, and any page can fit into any available frame. However, paging can cause internal fragmentation within the last page of a process if it doesn't completely fill the page. Overall, paging significantly reduces fragmentation issues compared to other memory allocation schemes."
     },
-  
+    {
+      "question": "The FIFO page replacement algorithm: (Select all that apply)",
+      "options": [
+        "Is easy to implement using a queue",
+        "Can exhibit Belady's anomaly",
+        "Often does not yield optimal performance",
+        "Chooses the page that has been in memory longest"
+      ],
+      "correctAnswer": [0, 1, 2, 3],
+      "explanation": "FIFO (First-In-First-Out) replaces the oldest page in memory and is simple to implement using a queue data structure. However, it can suffer from Belady's anomaly (where adding more frames increases page faults) and often doesn't perform optimally because it doesn't consider how recently or frequently pages are used."
+    },
+    {
+      "question": "External fragmentation is",
+      "options": [
+        "when there is some unused memory that cannot be allocated to a process",
+        "when the amount of available memory is less than the size of a process",
+        "when there is enough total memory space to satisfy a request but the available spaces are not contiguous",
+        "when a process is broken up into smaller parts for memory allocation"
+      ],
+      "correctAnswer": 2,
+      "explanation": "External fragmentation occurs when free memory is scattered in small non-contiguous blocks throughout the system. Although the total free memory might be sufficient to satisfy a memory allocation request, the fragmented nature prevents allocation because no single contiguous block is large enough."
+    },
+    {
+      "question": "Which memory allocation algorithm allocates the first free block that is large enough to accommodate a process?",
+      "options": [
+        "Worst-fit",
+        "First-fit",
+        "Next Fit",
+        "Best-fit"
+      ],
+      "correctAnswer": 1,
+      "explanation": "First-fit searches the memory from the beginning and allocates the first available block that is large enough to satisfy the request. It's simple and fast but can lead to fragmentation at the beginning of memory. Best-fit finds the smallest suitable block, worst-fit finds the largest, and next-fit continues searching from where it last left off."
+    },
+    {
+      "question": "What is the primary advantage of using a TLB?",
+      "options": [
+        "It eliminates page faults",
+        "It increases available memory",
+        "It speeds up virtual-to-physical address translation",
+        "It simplifies memory allocation"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The Translation Lookaside Buffer (TLB) is a cache that stores recent virtual-to-physical address translations. By caching these mappings, the TLB dramatically speeds up address translation by avoiding the need to access the page table in memory for every memory reference, which would be much slower."
+    },
+    {
+      "question": "The loss of usable memory space due to the mismatch between the page size and the size of a program is referred to as _____ fragmentation.",
+      "options": [
+        "logical",
+        "external",
+        "physical",
+        "internal"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Internal fragmentation occurs within allocated memory blocks when the allocated space is larger than needed. In paging, if a process doesn't perfectly fill its last page, the unused portion of that page is wasted. This wasted space within the allocated page frame is called internal fragmentation."
+    },
+    {
+      "question": "Which of the following is a disadvantage of compile-time binding?",
+      "options": [
+        "It requires specialized hardware support",
+        "It is too slow for modern systems",
+        "It causes excessive page faults",
+        "If the starting location changes, the code must be recompiled"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Compile-time binding assigns absolute physical addresses during compilation. This means the program must be loaded at a specific memory location. If that location is unavailable or changes, the entire program must be recompiled with new addresses, making it extremely inflexible for multiprogramming environments."
+    },
+    {
+      "question": "The LRU algorithm is guaranteed to never suffer from Belady's anomaly.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "LRU (Least Recently Used) belongs to a class of algorithms called stack algorithms, which are proven to never exhibit Belady's anomaly. Stack algorithms have the property that the set of pages in memory with n frames is always a subset of the pages in memory with n+1 frames, ensuring that increasing frames never increases page faults."
+    },
+    {
+      "question": "Allocating nodes of a linked list from a contiguous block of memory can improve cache locality.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "When linked list nodes are allocated from a contiguous memory region, sequential nodes are more likely to be physically close to each other. This improves spatial locality, making it more likely that accessing one node will bring subsequent nodes into the cache, reducing cache misses and improving performance."
+    },
+    {
+      "question": "Paging divides memory into variable-sized sections based on logical divisions.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Paging divides physical memory into fixed-size blocks called frames and divides logical memory into blocks of the same size called pages. All pages and frames are the same size. It is segmentation (not paging) that divides memory into variable-sized sections based on logical divisions like code, data, and stack."
+    },
+    {
+      "question": "Dynamic linking reduces the size of executable files by loading library code only when needed.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Dynamic linking defers the linking of libraries until runtime. Instead of including library code in the executable file (as with static linking), dynamic linking only includes references to the libraries. The actual library code is loaded into memory when the program runs, significantly reducing executable file size and allowing multiple programs to share library code in memory."
+    },
+    {
+      "question": "Page faults occur when a process attempts to access a page that is not in memory.",
+      "options": [
+        "False",
+        "True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A page fault is a hardware exception triggered when a process tries to access a page whose valid bit in the page table indicates it's not currently in physical memory. The operating system must then handle this fault by loading the required page from secondary storage into a free frame in physical memory."
+    },
+    {
+      "question": "In demand paging, a page is only loaded into memory when it is needed.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Demand paging is a lazy loading strategy where pages are loaded into memory only when they are actually referenced by the process. This contrasts with loading all pages at program start. Demand paging reduces initial load time and memory usage, as pages that are never accessed are never loaded."
+    },
+    {
+      "question": "Thrashing occurs when a system spends more time paging than executing processes.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Thrashing is a severe performance problem that occurs when the system doesn't have enough physical memory to hold the working sets of all active processes. Processes continuously generate page faults, causing the CPU to spend most of its time swapping pages in and out of memory rather than executing useful work, drastically reducing system throughput."
+    },
     {
       "question": "The 50-percent rule in memory allocation refers to fragmentation losses. This property is typically observed in which of the following memory allocation strategies?",
       "options": [
