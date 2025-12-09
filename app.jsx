@@ -59,6 +59,24 @@ function App() {
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
     }, [darkMode]);
     
+    // Handle sidebar visibility on mobile - hide by default on mobile, show on desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) { // md breakpoint
+                setShowSidebar(false);
+            } else {
+                setShowSidebar(true);
+            }
+        };
+        
+        // Set initial state
+        handleResize();
+        
+        // Listen for resize events
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
     // Toggle dark mode function
     const toggleDarkMode = () => {
         setDarkMode(prev => !prev);
@@ -1383,19 +1401,19 @@ Order questions so that:
     // Setup View
     if (currentView === 'setup') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 relative">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 relative">
                         {/* Header with Connect API Key button */}
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-2 gap-3">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Multiple Choice Practice</h1>
-                                <p className="text-gray-600 dark:text-gray-300 mb-6">Transform any study material into practice questions</p>
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">Multiple Choice Practice</h1>
+                                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4 md:mb-6">Transform any study material into practice questions</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 <button
                                     onClick={toggleDarkMode}
-                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium"
+                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium min-h-[44px]"
                                     title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
                                 >
                                     {darkMode ? "☀️" : "🌙"}
@@ -1476,16 +1494,17 @@ Order questions so that:
                                             setError(`Failed to refresh questions: ${err.message}`);
                                         }
                                     }}
-                                    className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-xs font-medium"
+                                    className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-xs font-medium min-h-[44px]"
                                     title="Refresh questions from file (clears cache)"
                                 >
-                                    🔄 Refresh
+                                    <span className="hidden sm:inline">🔄 Refresh</span>
+                                    <span className="sm:hidden">🔄</span>
                                 </button>
                                 <button
                                     onClick={() => setShowApiKeyModal(true)}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap"
+                                    className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-blue-700 transition text-xs md:text-sm font-medium whitespace-nowrap min-h-[44px]"
                                 >
-                                    {apiKey ? '✓ API Connected' : 'Connect API Key'}
+                                    {apiKey ? <span><span className="hidden sm:inline">✓ API Connected</span><span className="sm:hidden">✓</span></span> : <span><span className="hidden sm:inline">Connect API Key</span><span className="sm:hidden">API</span></span>}
                                 </button>
                             </div>
                         </div>
@@ -1498,18 +1517,18 @@ Order questions so that:
                             
                             <div className="space-y-3">
                                 {/* Create new set */}
-                                <div className="flex gap-2 mb-3">
+                                <div className="flex flex-col sm:flex-row gap-2 mb-3">
                                     <input
                                         type="text"
                                         value={newSetName}
                                         onChange={(e) => setNewSetName(e.target.value)}
                                         placeholder="New set name..."
-                                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
+                                        className="flex-1 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 min-h-[44px]"
                                         onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                     />
                                     <button
                                         onClick={createQuestionSet}
-                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                        className="bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition text-sm min-h-[44px] whitespace-nowrap"
                                     >
                                         Create Set
                                     </button>
@@ -1594,7 +1613,7 @@ Order questions so that:
                                                             setEditingSetId(setId);
                                                             setEditingSetName(set.name);
                                                         }}
-                                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm px-2"
+                                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm px-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                     >
                                                         ✏️
                                                     </button>
@@ -1604,7 +1623,7 @@ Order questions so that:
                                                             e.stopPropagation();
                                                             deleteQuestionSet(setId);
                                                         }}
-                                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2"
+                                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                     >
                                                         🗑️
                                                     </button>
@@ -1674,7 +1693,7 @@ Order questions so that:
                         {/* API Key Modal */}
                         {showApiKeyModal && (
                             <div 
-                                className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50"
+                                className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4"
                                 onClick={(e) => {
                                     if (e.target === e.currentTarget) {
                                         setShowApiKeyModal(false);
@@ -1683,7 +1702,7 @@ Order questions so that:
                                 }}
                             >
                                 <div 
-                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <div className="flex justify-between items-center mb-4">
@@ -1708,7 +1727,7 @@ Order questions so that:
                                             value={apiKey}
                                             onChange={(e) => setApiKey(e.target.value)}
                                             placeholder="sk-ant-..."
-                                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-h-[44px] text-base"
                                         />
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                             Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">console.anthropic.com</a>
@@ -1720,7 +1739,7 @@ Order questions so that:
                                             saveApiKey();
                                             setShowApiKeyModal(false);
                                         }}
-                                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition mb-4"
+                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition mb-4 min-h-[44px] font-medium"
                                     >
                                         Save API Key
                                     </button>
@@ -1735,7 +1754,7 @@ Order questions so that:
                                             }
                                         }}
                                         disabled={!apiKey}
-                                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px] font-medium"
                                     >
                                         Generate Questions from Text
                                     </button>
@@ -1764,9 +1783,9 @@ Order questions so that:
     // Generate View
     if (currentView === 'generate') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
                             className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
@@ -1774,8 +1793,8 @@ Order questions so that:
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Enter Study Material</h2>
-                        <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4">Enter Study Material</h2>
+                        <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">
                             Paste your notes, textbook content, or any material you want to study. The AI will convert it into multiple choice questions.
                         </p>
 
@@ -1839,7 +1858,7 @@ Order questions so that:
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             placeholder="Example: The mitochondria is the powerhouse of the cell. It produces ATP through cellular respiration..."
-                            className="w-full h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                            className="w-full h-48 md:h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
                         />
 
                         {error && (
@@ -1851,7 +1870,7 @@ Order questions so that:
                         <button
                             onClick={generateQuestions}
                             disabled={isGenerating || !inputText.trim() || !currentSetId}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold min-h-[44px] text-sm md:text-base"
                         >
                             {isGenerating ? 'Generating Questions...' : 'Generate Multiple Choice Questions'}
                         </button>
@@ -1869,9 +1888,9 @@ Order questions so that:
     // Manual Input View
     if (currentView === 'manual') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
                             className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
@@ -1879,7 +1898,7 @@ Order questions so that:
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Add Question Manually</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4 md:mb-6">Add Question Manually</h2>
 
                         {/* Set Selector */}
                         <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -1888,18 +1907,18 @@ Order questions so that:
                             </label>
                             
                             {/* Create new set */}
-                            <div className="flex gap-2 mb-3">
+                            <div className="flex flex-col sm:flex-row gap-2 mb-3">
                                 <input
                                     type="text"
                                     value={newSetName}
                                     onChange={(e) => setNewSetName(e.target.value)}
                                     placeholder="New set name..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
+                                    className="flex-1 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 min-h-[44px]"
                                     onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                 />
                                 <button
                                     onClick={createQuestionSet}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                    className="bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition text-sm min-h-[44px] whitespace-nowrap"
                                 >
                                     Create Set
                                 </button>
@@ -1918,7 +1937,7 @@ Order questions so that:
                                                 selectQuestionSet(e.target.value);
                                             }
                                         }}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white min-h-[44px]"
                                     >
                                         <option value="">-- Select a set --</option>
                                         {Object.entries(questionSets).map(([setId, set]) => (
@@ -1931,7 +1950,7 @@ Order questions so that:
                             )}
                             
                             {currentSetId && questionSets[currentSetId] && (
-                                <div className="mt-3 text-sm font-semibold text-blue-700">
+                                <div className="mt-3 text-sm font-semibold text-blue-700 dark:text-blue-400">
                                     ✓ Selected: {questionSets[currentSetId].name}
                                 </div>
                             )}
@@ -1952,7 +1971,7 @@ Order questions so that:
                                     value={manualQuestion.question}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, question: e.target.value }))}
                                     placeholder="Enter your question here..."
-                                    className="w-full h-24 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                    className="w-full h-24 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
                                 />
                             </div>
 
@@ -2010,12 +2029,12 @@ Order questions so that:
                                             value={option}
                                             onChange={(e) => updateOption(index, e.target.value)}
                                             placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-h-[44px] text-base"
                                         />
                                         {manualQuestion.options.length > 2 && (
                                             <button
                                                 onClick={() => removeOption(index)}
-                                                className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition"
+                                                className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition min-h-[44px] min-w-[60px]"
                                             >
                                                 Remove
                                             </button>
@@ -2024,7 +2043,7 @@ Order questions so that:
                                 ))}
                                 <button
                                     onClick={addOption}
-                                    className="mt-2 px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition border border-blue-300 dark:border-blue-600"
+                                    className="mt-2 px-4 py-2.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition border border-blue-300 dark:border-blue-600 min-h-[44px] font-medium"
                                 >
                                     + Add Option
                                 </button>
@@ -2038,7 +2057,7 @@ Order questions so that:
                                     value={manualQuestion.explanation}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, explanation: e.target.value }))}
                                     placeholder="Explain why the correct answer is correct..."
-                                    className="w-full h-20 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                    className="w-full h-20 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
                                 />
                             </div>
                         </div>
@@ -2046,7 +2065,7 @@ Order questions so that:
                         <button
                             onClick={saveManualQuestion}
                             disabled={!currentSetId}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold mb-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold mb-4 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px] text-sm md:text-base"
                         >
                             Save Question
                         </button>
@@ -2129,13 +2148,13 @@ Order questions so that:
         }
         if (currentQuestions.length === 0) {
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                     <div className="max-w-2xl mx-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 text-center">
-                            <p className="text-gray-600 dark:text-gray-300 mb-4">No questions available for practice.</p>
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 text-center">
+                            <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm md:text-base">No questions available for practice.</p>
                             <button
                                 onClick={() => setCurrentView('setup')}
-                                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+                                className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition min-h-[44px] font-medium text-sm md:text-base"
                             >
                                 Back to Setup
                             </button>
@@ -2153,21 +2172,28 @@ Order questions so that:
         };
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 relative">
                         {/* Sidebar - Question List */}
                         {showSidebar && (
-                            <div className="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 h-fit sticky top-4">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Questions</h3>
-                                    <button
-                                        onClick={() => setShowSidebar(false)}
-                                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
+                            <>
+                                {/* Mobile overlay backdrop */}
+                                <div 
+                                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                                    onClick={() => setShowSidebar(false)}
+                                ></div>
+                                {/* Sidebar */}
+                                <div className="fixed md:sticky left-0 top-0 md:top-4 w-80 md:w-64 h-full md:h-fit bg-white dark:bg-gray-800 rounded-lg md:rounded-lg shadow-xl p-4 z-50 md:z-auto overflow-y-auto md:overflow-y-visible">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Questions</h3>
+                                        <button
+                                            onClick={() => setShowSidebar(false)}
+                                            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
                                 <div className="space-y-1 max-h-[600px] overflow-y-auto">
                                     {currentQuestions.map((q, index) => {
                                         const result = getQuestionResult(q, index);
@@ -2200,32 +2226,33 @@ Order questions so that:
                                         );
                                     })}
                                 </div>
-                            </div>
+                                </div>
+                            </>
                         )}
                         
                         {/* Main Content */}
-                        <div className={`flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
+                        <div className={`flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
                             {!showSidebar && (
                                 <button
                                     onClick={() => setShowSidebar(true)}
-                                    className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"
+                                    className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center min-h-[44px]"
                                 >
                                     ☰ Show Question List
                                 </button>
                             )}
-                        <div className="flex justify-between items-center mb-6">
-                            <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                                 <button
                                     onClick={() => {
                                         setCurrentView('setup');
                                     }}
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 min-h-[44px] px-2"
                                 >
-                                    ← Exit Practice
+                                    ← <span className="hidden sm:inline">Exit Practice</span><span className="sm:hidden">Exit</span>
                                 </button>
                                 <button
                                     onClick={toggleDarkMode}
-                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium"
+                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium min-h-[44px]"
                                     title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
                                 >
                                     {darkMode ? "☀️" : "🌙"}
@@ -2252,7 +2279,7 @@ Order questions so that:
                             )}
                         </div>
 
-                        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+                        <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-2">
                             {currentQuestion.question}
                         </h3>
                         {isMultiAnswer(currentQuestion) && (
@@ -2293,7 +2320,7 @@ Order questions so that:
                                         key={index}
                                         onClick={() => handleAnswerSelect(index, currentQuestion)}
                                         disabled={showAnswer}
-                                        className={buttonClass + " text-gray-800 dark:text-white"}
+                                        className={buttonClass + " text-gray-800 dark:text-white min-h-[44px] text-sm md:text-base"}
                                     >
                                         <span className={`flex-shrink-0 mt-0.5 ${isMulti ? 'w-5 h-5 border-2 rounded' : 'w-5 h-5 border-2 rounded-full'} ${
                                             isSelected 
@@ -2359,16 +2386,16 @@ Order questions so that:
                                     disabled={isMultiAnswer(currentQuestion) 
                                         ? selectedAnswers.length === 0 
                                         : selectedAnswer === null}
-                                    className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                                    className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold min-h-[44px] text-sm md:text-base"
                                 >
-                                    Submit Answer{isMultiAnswer(currentQuestion) && selectedAnswers.length > 0 && ` (${selectedAnswers.length} selected)`}
+                                    Submit Answer{isMultiAnswer(currentQuestion) && selectedAnswers.length > 0 && <span className="hidden sm:inline"> ({selectedAnswers.length} selected)</span>}
                                 </button>
                             ) : (
                                 <button
                                     onClick={nextQuestion}
-                                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold"
+                                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold min-h-[44px] text-sm md:text-base"
                                 >
-                                    {currentQuestionIndex < currentQuestions.length - 1 ? 'Next Question →' : 'View Results'}
+                                    {currentQuestionIndex < currentQuestions.length - 1 ? <span><span className="hidden sm:inline">Next Question </span>→</span> : 'View Results'}
                                 </button>
                             )}
                         </div>
@@ -2384,16 +2411,16 @@ Order questions so that:
         const percentage = Math.round((score.correct / score.total) * 100);
         
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 text-center">
-                        <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 text-center">
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-4">
                             Practice Complete!
                         </h2>
                         
-                        <div className="my-8">
-                            <div className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">{percentage}%</div>
-                            <div className="text-xl text-gray-600 dark:text-gray-300">
+                        <div className="my-6 md:my-8">
+                            <div className="text-4xl md:text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">{percentage}%</div>
+                            <div className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
                                 {score.correct} out of {score.total} correct
                             </div>
                         </div>
@@ -2401,19 +2428,19 @@ Order questions so that:
                         <div className="space-y-3">
                             <button
                                 onClick={restartPractice}
-                                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold"
+                                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold min-h-[44px] text-sm md:text-base"
                             >
                                 Practice Again
                             </button>
                             <button
                                 onClick={startNewSet}
-                                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold"
+                                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold min-h-[44px] text-sm md:text-base"
                             >
                                 Create New Questions
                             </button>
                             <button
                                 onClick={() => setCurrentView('setup')}
-                                className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition font-semibold"
+                                className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition font-semibold min-h-[44px] text-sm md:text-base"
                             >
                                 Back to Home
                             </button>
