@@ -1082,8 +1082,8 @@
         "True",
         "False"
       ],
-      "correctAnswer": 1,
-      "explanation": "False. An absolute path specifies the complete path from the root directory, while a relative path is relative to the current directory. A relative path can be much shorter than the absolute path.",
+      "correctAnswer": 0,
+      "explanation": "True. An absolute path specifies the complete path from the root directory, while a relative path is relative to the current directory. A relative path can be much shorter than the absolute path.",
       "id": "176470423934123j8c0lqtnv"
     },
     {
