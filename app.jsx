@@ -1,5 +1,39 @@
 const { useState, useEffect } = React;
 
+function ThemeToggleButton({ darkMode, onToggle, className = '' }) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className={`theme-toggle-btn setup-action-btn ${className}`.trim()}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+            {darkMode ? (
+                <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.75" />
+                    <path
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                    />
+                </svg>
+            ) : (
+                <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21 14.5A7.5 7.5 0 0 1 9.5 3 6 6 0 1 0 21 14.5z"
+                    />
+                </svg>
+            )}
+        </button>
+    );
+}
+
 function App() {
     const [apiKey, setApiKey] = useState('');
     const [currentView, setCurrentView] = useState('setup'); // setup, generate, manual, practice, results
@@ -92,10 +126,32 @@ function App() {
     const DEFAULT_QUESTIONS_FILE = 'test 3.json';
     
     // Default name for the auto-loaded question set
-    const DEFAULT_QUESTIONS_SET_NAME = 'OS Final Exam Practice';
+    const DEFAULT_QUESTIONS_SET_NAME = 'Operating Systems Final Exam Sample';
+    const SAMPLE_SET_ID = 'sample-os-final-exam';
     
     // Key for storing the version of the loaded questions file
     const QUESTIONS_VERSION_KEY = 'questionsFileVersion';
+
+    const resolveTargetSetId = (prev, customSetName) => {
+        if (customSetName === DEFAULT_QUESTIONS_SET_NAME) {
+            return Object.keys(prev).find(
+                id => id === SAMPLE_SET_ID || prev[id]?.name === DEFAULT_QUESTIONS_SET_NAME
+            ) || SAMPLE_SET_ID;
+        }
+        if (customSetName) {
+            return Object.keys(prev).find(id => prev[id]?.name === customSetName) || ('set-' + Date.now());
+        }
+        return 'set-' + Date.now();
+    };
+
+    const getSetNameFromPath = (urlOrPath) => {
+        const filename = urlOrPath.split('/').pop().replace(/\.json$/i, '');
+        return filename
+            .replace(/[-_]/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
 
     // Helper function to load questions from JSON file (URL or local file)
     const loadQuestionsFromJSON = async (urlOrPath, customSetName = null, checkVersion = false) => {
@@ -115,23 +171,9 @@ function App() {
             }
             const data = await response.json();
             
-            // Check version if requested (for auto-load to detect updates)
+            // Track file version for sample test updates (never wipe user-created sets)
             if (checkVersion) {
                 const fileVersion = data.version || data.exportDate || null;
-                const storedVersion = localStorage.getItem(QUESTIONS_VERSION_KEY);
-                
-                // If file has a newer version, clear localStorage to force reload
-                if (fileVersion && storedVersion && fileVersion !== storedVersion) {
-                    // Clear all question-related data
-                    localStorage.removeItem('questionSets');
-                    localStorage.removeItem('currentSetId');
-                    localStorage.removeItem('questionResults');
-                    // Clear old format data too
-                    localStorage.removeItem('questions');
-                    localStorage.removeItem('manualQuestions');
-                }
-                
-                // Store the new version
                 if (fileVersion) {
                     localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
                 }
@@ -157,47 +199,26 @@ function App() {
                 id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
             }));
 
-            // Create or update a question set using functional updates
-            let newSetId = null;
+            // Merge into existing sets — update sample set or add/import without removing others
+            let loadedSetId = null;
             setQuestionSets(prev => {
-                // Find existing set ID or create new one
-                const existingSetIds = Object.keys(prev);
-                const setId = existingSetIds.length > 0 ? existingSetIds[0] : 'set-' + Date.now();
-                newSetId = setId;
-                
-                // Generate a nice name from the filename if it's a new set
-                let setName = prev[setId]?.name || 'Imported Set';
-                if (!existingSetIds.includes(setId)) {
-                    // Use custom name if provided, otherwise extract from filename
-                    if (customSetName) {
-                        setName = customSetName;
-                    } else {
-                        // Extract name from filename (remove .json, replace spaces/underscores with spaces, capitalize)
-                        const filename = urlOrPath.split('/').pop().replace(/\.json$/i, '');
-                        setName = filename
-                            .replace(/[-_]/g, ' ')
-                            .split(' ')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
-                    }
-                }
-                
+                const setId = resolveTargetSetId(prev, customSetName);
+                loadedSetId = setId;
+
+                let setName = customSetName || prev[setId]?.name || getSetNameFromPath(urlOrPath);
+
                 const newSet = {
                     name: setName,
                     questions: questionsWithIds,
                     createdAt: prev[setId]?.createdAt || Date.now()
                 };
-                
-                // Update currentSetId if we created a new set
-                if (!existingSetIds.includes(setId)) {
-                    setCurrentSetId(setId);
-                }
-                
+
                 return {
                     ...prev,
                     [setId]: newSet
                 };
             });
+            setCurrentSetId(loadedSetId);
 
             // Update savedManualQuestions using a callback to ensure state is set
             setSavedManualQuestions(questionsWithIds);
@@ -209,6 +230,18 @@ function App() {
             setError(`Failed to load questions: ${errorMessage}`);
             // Re-throw so caller can handle it
             throw error;
+        }
+    };
+
+    const loadSampleTestQuestions = async () => {
+        try {
+            setError('');
+            isAutoLoadingRef.current = true;
+            await loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME, true);
+        } catch (err) {
+            setError(`Failed to load sample test: ${err.message}`);
+        } finally {
+            isAutoLoadingRef.current = false;
         }
     };
 
@@ -284,17 +317,9 @@ function App() {
                         const fileVersion = data.version || data.exportDate || null;
                         const storedVersion = localStorage.getItem(QUESTIONS_VERSION_KEY);
                         
-                        // If file version is different, reload the questions
+                        // If file version is different, reload only the sample test set
                         if (fileVersion && storedVersion && fileVersion !== storedVersion) {
-                            // Clear and reload
-                            localStorage.removeItem('questionSets');
-                            localStorage.removeItem('currentSetId');
-                            localStorage.removeItem('questionResults');
-                            localStorage.removeItem('questions');
-                            localStorage.removeItem('manualQuestions');
                             localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
-                            
-                            // Reload the questions
                             isAutoLoadingRef.current = true;
                             await loadQuestionsFromJSON(DEFAULT_QUESTIONS_FILE, DEFAULT_QUESTIONS_SET_NAME, false);
                             isAutoLoadingRef.current = false;
@@ -553,7 +578,7 @@ function App() {
     const deleteQuestionSet = (setId) => {
         const isLastSet = Object.keys(questionSets).length === 1;
         const confirmMessage = isLastSet 
-            ? `Are you sure you want to delete the last question set "${questionSets[setId]?.name}"? This will clear all questions. You can refresh or import new questions afterward.`
+            ? `Are you sure you want to delete the last question set "${questionSets[setId]?.name}"? This will clear all questions. You can generate a sample test or import new questions afterward.`
             : `Are you sure you want to delete "${questionSets[setId]?.name}"? This cannot be undone.`;
         
         if (confirm(confirmMessage)) {
@@ -1400,298 +1425,289 @@ Order questions so that:
 
     // Setup View
     if (currentView === 'setup') {
+        const totalSets = Object.keys(questionSets).length;
+        const totalQuestions = Object.values(questionSets).reduce(
+            (sum, set) => sum + (set.questions?.length || 0),
+            0
+        );
+
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
-                <div className="max-w-2xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 relative">
-                        {/* Header with Connect API Key button */}
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-2 gap-3">
-                            <div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">Multiple Choice Practice</h1>
-                                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4 md:mb-6">Transform any study material into practice questions</p>
-                            </div>
-                            <div className="flex gap-2 flex-wrap">
-                                <button
-                                    onClick={toggleDarkMode}
-                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium min-h-[44px]"
-                                    title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-                                >
-                                    {darkMode ? "☀️" : "🌙"}
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            // Force refresh questions by clearing cache and reloading
-                                            localStorage.removeItem('questionSets');
-                                            localStorage.removeItem('currentSetId');
-                                            localStorage.removeItem('questionResults');
-                                            localStorage.removeItem(QUESTIONS_VERSION_KEY);
-                                            localStorage.removeItem('questions');
-                                            localStorage.removeItem('manualQuestions');
-                                            
-                                            // Clear state
-                                            setQuestionSets({});
-                                            setCurrentSetId(null);
-                                            setSavedManualQuestions([]);
-                                            setError('');
-                                            
-                                            // Set flag to prevent saves during load
-                                            isAutoLoadingRef.current = true;
-                                            
-                                            // Fetch and load data directly (similar to auto-load)
-                                            const url = DEFAULT_QUESTIONS_FILE.startsWith('http') 
-                                                ? DEFAULT_QUESTIONS_FILE 
-                                                : encodeURIComponent(DEFAULT_QUESTIONS_FILE);
-                                            const response = await fetch(url);
-                                            if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
-                                            const data = await response.json();
-                                            
-                                            // Check version
-                                            const fileVersion = data.version || data.exportDate || null;
-                                            if (fileVersion) {
-                                                localStorage.setItem(QUESTIONS_VERSION_KEY, fileVersion);
-                                            }
-                                            
-                                            // Extract questions
-                                            let questionsToImport = [];
-                                            if (Array.isArray(data)) {
-                                                questionsToImport = data;
-                                            } else if (data.questions && Array.isArray(data.questions)) {
-                                                questionsToImport = data.questions;
-                                            }
-                                            
-                                            if (questionsToImport.length > 0) {
-                                                // Add IDs to questions
-                                                const questionsWithIds = questionsToImport.map((q, index) => ({
-                                                    ...q,
-                                                    id: q.id || Date.now().toString() + index + Math.random().toString(36).substr(2, 9)
-                                                }));
-                                                
-                                                // Create set with questions all at once
-                                                const setId = 'set-' + Date.now();
-                                                const newSet = {
-                                                    name: DEFAULT_QUESTIONS_SET_NAME,
-                                                    questions: questionsWithIds,
-                                                    createdAt: Date.now()
-                                                };
-                                                
-                                                // Set all state at once - no race condition
-                                                setQuestionSets({ [setId]: newSet });
-                                                setCurrentSetId(setId);
-                                                setSavedManualQuestions(questionsWithIds);
-                                                
-                                                // Save to localStorage immediately since we have complete data
-                                                localStorage.setItem('questionSets', JSON.stringify({ [setId]: newSet }));
-                                                localStorage.setItem('currentSetId', setId);
-                                            } else {
-                                                throw new Error('No questions found in file');
-                                            }
-                                            
-                                            // Clear flag
-                                            isAutoLoadingRef.current = false;
-                                        } catch (err) {
-                                            isAutoLoadingRef.current = false;
-                                            setError(`Failed to refresh questions: ${err.message}`);
-                                        }
-                                    }}
-                                    className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-xs font-medium min-h-[44px]"
-                                    title="Refresh questions from file (clears cache)"
-                                >
-                                    <span className="hidden sm:inline">🔄 Refresh</span>
-                                    <span className="sm:hidden">🔄</span>
-                                </button>
-                                <button
-                                    onClick={() => setShowApiKeyModal(true)}
-                                    className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-blue-700 transition text-xs md:text-sm font-medium whitespace-nowrap min-h-[44px]"
-                                >
-                                    {apiKey ? <span><span className="hidden sm:inline">✓ API Connected</span><span className="sm:hidden">✓</span></span> : <span><span className="hidden sm:inline">Connect API Key</span><span className="sm:hidden">API</span></span>}
-                                </button>
-                            </div>
+            <div className="theme-page theme-page-home min-h-screen">
+                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+                    {/* Header */}
+                    <header className="mb-8 flex items-start justify-between gap-4 lg:mb-10">
+                        <div>
+                            <p className="theme-accent-label mb-2 text-xs font-semibold uppercase tracking-widest">
+                                Study smarter
+                            </p>
+                            <h1 className="theme-text text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+                                Multiple Choice Practice
+                            </h1>
+                            <p className="theme-text-muted mt-3 max-w-2xl text-base leading-relaxed sm:text-lg">
+                                Transform notes, chapters, and study material into practice questions you can review anytime.
+                            </p>
                         </div>
-                        
-                        {/* Question Set Management */}
-                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Question Sets
-                            </label>
-                            
-                            <div className="space-y-3">
+                        <ThemeToggleButton darkMode={darkMode} onToggle={toggleDarkMode} />
+                    </header>
+
+                    {/* Two-column layout */}
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 lg:items-stretch">
+                        {/* Left — Create questions */}
+                        <section className="theme-panel setup-panel flex flex-col overflow-hidden rounded-2xl border shadow-sm">
+                            <div className="theme-panel-header border-b px-6 py-5">
+                                <h2 className="theme-text text-lg font-semibold sm:text-xl">
+                                    Create Questions
+                                </h2>
+                                <p className="theme-text-muted mt-1 text-sm">
+                                    AI-powered or manual entry
+                                </p>
+                            </div>
+
+                            <div className="flex flex-1 flex-col p-6 sm:p-7">
+                                <p className="theme-text-muted text-sm leading-relaxed sm:text-base">
+                                    Upload question sets, school notes, chapters, and other text to generate questions to practice on.
+                                </p>
+
+                                <ul className="mt-5 space-y-3">
+                                    {[
+                                        'Paste notes or textbook content',
+                                        'AI generates multiple choice questions',
+                                        'Or add questions manually one by one',
+                                    ].map((label) => (
+                                        <li
+                                            key={label}
+                                            className="setup-panel-accent rounded-xl border px-4 py-3"
+                                        >
+                                            <span className="theme-text text-sm font-medium">
+                                                {label}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <div className="mt-auto space-y-3 pt-8">
+                                    <button
+                                        onClick={() => {
+                                            if (apiKey) {
+                                                setCurrentView('generate');
+                                                setError('');
+                                            } else {
+                                                setShowApiKeyModal(true);
+                                            }
+                                        }}
+                                        className="theme-btn-primary setup-action-btn w-full rounded-xl px-4 py-4 text-base font-semibold transition"
+                                    >
+                                        Generate questions with text
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setCurrentView('manual');
+                                            setError('');
+                                        }}
+                                        className="theme-btn-secondary setup-action-btn w-full rounded-xl px-4 py-4 text-base font-medium transition"
+                                    >
+                                        Manually add questions
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Right — Question sets */}
+                        <section className="theme-panel setup-panel flex flex-col overflow-hidden rounded-2xl border shadow-sm">
+                            <div className="theme-panel-header border-b px-6 py-5">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="theme-text text-lg font-semibold sm:text-xl">
+                                            Question Sets
+                                        </h2>
+                                        <p className="theme-text-muted mt-1 text-sm">
+                                            {totalSets === 0
+                                                ? 'No sets yet'
+                                                : `${totalSets} set${totalSets !== 1 ? 's' : ''} · ${totalQuestions} question${totalQuestions !== 1 ? 's' : ''}`}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={loadSampleTestQuestions}
+                                        className="theme-btn-secondary setup-action-btn inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium transition"
+                                        title="Load the OS Final Exam sample question set"
+                                    >
+                                        Sample test
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-1 flex-col p-6 sm:p-7">
                                 {/* Create new set */}
-                                <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                                <div className="mb-5 flex flex-col gap-3 sm:flex-row">
                                     <input
                                         type="text"
                                         value={newSetName}
                                         onChange={(e) => setNewSetName(e.target.value)}
-                                        placeholder="New set name..."
-                                        className="flex-1 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 min-h-[44px]"
+                                        placeholder="Name your new set..."
+                                        className="theme-input min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm transition"
                                         onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                     />
                                     <button
                                         onClick={createQuestionSet}
-                                        className="bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition text-sm min-h-[44px] whitespace-nowrap"
+                                        className="theme-btn-primary setup-action-btn shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition"
                                     >
-                                        Create Set
+                                        Create set
                                     </button>
                                 </div>
-                                
+
                                 {/* List of sets */}
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                <div className="setup-set-list min-h-[12rem] flex-1 space-y-3 overflow-y-auto pr-1 lg:max-h-[calc(100vh-22rem)]">
                                     {Object.entries(questionSets).map(([setId, set]) => (
                                         <div
                                             key={setId}
-                                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                                            className={`rounded-xl border p-4 transition-colors ${
                                                 currentSetId === setId
-                                                    ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600'
-                                                    : 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500'
+                                                    ? 'theme-set-selected'
+                                                    : 'theme-set-default'
                                             }`}
                                         >
-                                            <div className="flex-1">
-                                                {editingSetId === setId ? (
+                                            {editingSetId === setId ? (
+                                                <div className="flex flex-col gap-2 sm:flex-row">
+                                                    <input
+                                                        type="text"
+                                                        value={editingSetName}
+                                                        onChange={(e) => setEditingSetName(e.target.value)}
+                                                        className="theme-input min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
+                                                        onKeyPress={(e) => e.key === 'Enter' && renameQuestionSet(setId)}
+                                                    />
                                                     <div className="flex gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={editingSetName}
-                                                            onChange={(e) => setEditingSetName(e.target.value)}
-                                                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-500 rounded text-sm dark:bg-gray-700 dark:text-white"
-                                                            onKeyPress={(e) => e.key === 'Enter' && renameQuestionSet(setId)}
-                                                        />
                                                         <button
                                                             onClick={() => renameQuestionSet(setId)}
-                                                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm px-2"
+                                                            className="theme-btn-primary rounded-lg px-4 py-2 text-sm transition"
                                                         >
-                                                            ✓
+                                                            Save
                                                         </button>
                                                         <button
                                                             onClick={() => {
                                                                 setEditingSetId(null);
                                                                 setEditingSetName('');
                                                             }}
-                                                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm px-2"
+                                                            className="theme-btn-secondary rounded-lg px-4 py-2 text-sm transition"
                                                         >
-                                                            ✕
+                                                            Cancel
                                                         </button>
                                                     </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => selectQuestionSet(setId)}
-                                                            className="text-left flex-1 text-sm font-medium text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                                                        >
-                                                            {set.name} ({set.questions?.length || 0} questions)
-                                                        </button>
-                                                        <label 
-                                                            className="bg-orange-600 text-white py-1 px-2 rounded text-xs cursor-pointer hover:bg-orange-700 transition"
-                                                            onClick={() => {
-                                                                // Select this set before importing
-                                                                if (currentSetId !== setId) {
-                                                                    selectQuestionSet(setId);
-                                                                }
-                                                            }}
-                                                        >
-                                                            📤 Import
-                                                            <input
-                                                                type="file"
-                                                                accept=".json"
-                                                                onChange={importQuestions}
-                                                                className="hidden"
-                                                            />
-                                                        </label>
-                                                        <button
-                                                            onClick={() => exportQuestionSet(setId)}
-                                                            disabled={!set.questions || set.questions.length === 0}
-                                                            className="bg-teal-600 text-white py-1 px-2 rounded text-xs hover:bg-teal-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                        >
-                                                            📥 Export
-                                                        </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col">
+                                                    <button
+                                                        onClick={() => selectQuestionSet(setId)}
+                                                        className="group w-full text-left"
+                                                    >
+                                                        <span className="theme-text block text-base font-semibold transition group-hover:opacity-80">
+                                                            {set.name}
+                                                        </span>
+                                                    </button>
+                                                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                                                        <span className="theme-text-muted shrink-0 text-xs">
+                                                            {set.questions?.length || 0} questions
+                                                        </span>
+                                                        <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                                                            <label
+                                                                className="theme-btn-small inline-flex cursor-pointer items-center rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight transition"
+                                                                onClick={() => {
+                                                                    if (currentSetId !== setId) {
+                                                                        selectQuestionSet(setId);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Import
+                                                                <input
+                                                                    type="file"
+                                                                    accept=".json"
+                                                                    onChange={importQuestions}
+                                                                    className="hidden"
+                                                                />
+                                                            </label>
+                                                            <button
+                                                                onClick={() => exportQuestionSet(setId)}
+                                                                disabled={!set.questions || set.questions.length === 0}
+                                                                className="theme-btn-small inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight transition disabled:cursor-not-allowed disabled:opacity-40"
+                                                            >
+                                                                Export
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingSetId(setId);
+                                                                    setEditingSetName(set.name);
+                                                                }}
+                                                                className="theme-btn-small inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight transition"
+                                                            >
+                                                                Rename
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    deleteQuestionSet(setId);
+                                                                }}
+                                                                className="theme-btn-small-danger inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight transition"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                            {editingSetId !== setId && (
-                                                <div className="flex gap-1 ml-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingSetId(setId);
-                                                            setEditingSetName(set.name);
-                                                        }}
-                                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm px-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            deleteQuestionSet(setId);
-                                                        }}
-                                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                                    >
-                                                        🗑️
-                                                    </button>
                                                 </div>
                                             )}
                                         </div>
                                     ))}
+
+                                    {totalSets === 0 && (
+                                        <div className="theme-surface theme-border-dashed flex flex-col items-center justify-center rounded-xl border border-dashed px-6 py-12 text-center">
+                                            <p className="theme-text text-sm font-medium">
+                                                No question sets yet
+                                            </p>
+                                            <p className="theme-text-muted mt-1 text-sm">
+                                                Create a set above or load the sample test to get started.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
-                                
-                                {Object.keys(questionSets).length === 0 && (
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                                        No question sets yet. Create one to get started!
+
+                                {currentSetId && questionSets[currentSetId] && (questionSets[currentSetId].questions?.length || 0) > 0 && (
+                                    <div className="mt-5 pt-5">
+                                        <button
+                                            onClick={() => {
+                                                setPracticeOrder([]);
+
+                                                const savedResults = localStorage.getItem(`questionResults-${currentSetId}`);
+                                                let startIndex = 0;
+                                                if (savedResults) {
+                                                    try {
+                                                        const parsed = JSON.parse(savedResults);
+                                                        const questions = questionSets[currentSetId].questions || [];
+                                                        const firstUnanswered = questions.findIndex((q, idx) => {
+                                                            const key = q.id || `ai-${idx}`;
+                                                            return parsed[key] === undefined;
+                                                        });
+                                                        if (firstUnanswered !== -1) {
+                                                            startIndex = firstUnanswered;
+                                                        }
+                                                    } catch (e) {
+                                                    }
+                                                }
+
+                                                setCurrentView('practice');
+                                                setCurrentQuestionIndex(startIndex);
+                                                setScore({ correct: 0, total: 0 });
+                                            }}
+                                            className="theme-btn-primary setup-action-btn w-full rounded-xl py-4 text-base font-semibold transition"
+                                        >
+                                            Start practice · {questionSets[currentSetId].questions?.length || 0} questions
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                            
-                            {/* Practice button - below the list */}
-                            {currentSetId && questionSets[currentSetId] && (questionSets[currentSetId].questions?.length || 0) > 0 && (
-                                <div className="mt-4 pt-3 border-t">
-                                    <button
-                                        onClick={() => {
-                                            // Load saved questionResults from localStorage (already loaded via useEffect)
-                                            // Don't reset questionResults - preserve progress
-                                            setPracticeOrder([]);
-                                            
-                                            // Find first unanswered question, or start at 0 if all answered
-                                            const savedResults = localStorage.getItem(`questionResults-${currentSetId}`);
-                                            let startIndex = 0;
-                                            if (savedResults) {
-                                                try {
-                                                    const parsed = JSON.parse(savedResults);
-                                                    const questions = questionSets[currentSetId].questions || [];
-                                                    const firstUnanswered = questions.findIndex((q, idx) => {
-                                                        const key = q.id || `ai-${idx}`;
-                                                        return parsed[key] === undefined;
-                                                    });
-                                                    if (firstUnanswered !== -1) {
-                                                        startIndex = firstUnanswered;
-                                                    }
-                                                } catch (e) {
-                                                }
-                                            }
-                                            
-                                            setCurrentView('practice');
-                                            setCurrentQuestionIndex(startIndex);
-                                            setScore({ correct: 0, total: 0 }); // Reset score for new session
-                                        }}
-                                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition font-semibold"
-                                    >
-                                        Practice Questions ({questionSets[currentSetId].questions?.length || 0})
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Manually Add Questions Button */}
-                        <button
-                            onClick={() => {
-                                setCurrentView('manual');
-                                setError('');
-                            }}
-                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition mb-3"
-                        >
-                            Manually Add Questions
-                        </button>
-                        
-                        {/* API Key Modal */}
-                        {showApiKeyModal && (
+                        </section>
+                    </div>
+
+                    {/* API Key Modal */}
+                    {showApiKeyModal && (
                             <div 
                                 className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4"
                                 onClick={(e) => {
@@ -1702,24 +1718,24 @@ Order questions so that:
                                 }}
                             >
                                 <div 
-                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+                                    className="theme-modal rounded-lg shadow-xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Connect Claude API</h2>
+                                        <h2 className="theme-text text-xl font-bold">Connect Claude API</h2>
                                         <button
                                             onClick={() => {
                                                 setShowApiKeyModal(false);
                                                 setError('');
                                             }}
-                                            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none"
+                                            className="theme-text-muted hover:opacity-70 text-2xl leading-none"
                                         >
                                             ×
                                         </button>
                                     </div>
                                     
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="theme-text block text-sm font-medium mb-2">
                                             Claude API Key
                                         </label>
                                         <input
@@ -1727,10 +1743,10 @@ Order questions so that:
                                             value={apiKey}
                                             onChange={(e) => setApiKey(e.target.value)}
                                             placeholder="sk-ant-..."
-                                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-h-[44px] text-base"
+                                            className="theme-input w-full rounded-lg px-4 py-2.5 min-h-[44px] text-base"
                                         />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                            Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">console.anthropic.com</a>
+                                        <p className="theme-text-muted text-sm mt-2">
+                                            Get your API key from <a href="https://console.anthropic.com/" target="_blank" className="theme-link hover:underline">console.anthropic.com</a>
                                         </p>
                                     </div>
 
@@ -1739,7 +1755,7 @@ Order questions so that:
                                             saveApiKey();
                                             setShowApiKeyModal(false);
                                         }}
-                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition mb-4 min-h-[44px] font-medium"
+                                        className="theme-btn-primary setup-action-btn w-full rounded-lg py-3 px-4 mb-4 min-h-[44px] font-medium transition"
                                     >
                                         Save API Key
                                     </button>
@@ -1754,27 +1770,26 @@ Order questions so that:
                                             }
                                         }}
                                         disabled={!apiKey}
-                                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px] font-medium"
+                                        className="theme-btn-secondary setup-action-btn w-full rounded-lg py-3 px-4 min-h-[44px] font-medium transition disabled:opacity-45 disabled:cursor-not-allowed"
                                     >
                                         Generate Questions from Text
                                     </button>
                                     
                                     {error && (
-                                        <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-2 rounded text-sm mt-4">
+                                        <div className="theme-error px-4 py-2 rounded text-sm mt-4">
                                             {error}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
-                        
-                        {/* Error display - always visible */}
-                        {error && (
-                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-2 rounded text-sm mt-4">
-                                {error}
-                            </div>
-                        )}
-                    </div>
+                    
+                    {/* Error display - always visible */}
+                    {error && (
+                        <div className="theme-error mt-6 rounded-xl px-4 py-3 text-sm">
+                            {error}
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -1783,24 +1798,24 @@ Order questions so that:
     // Generate View
     if (currentView === 'generate') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+            <div className="theme-page min-h-screen p-4 md:p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8">
+                    <div className="theme-card rounded-lg shadow-xl p-4 md:p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
-                            className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+                            className="theme-link mb-4 flex items-center hover:opacity-80"
                         >
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4">Enter Study Material</h2>
-                        <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">
+                        <h2 className="theme-text text-xl md:text-2xl font-bold mb-4">Enter Study Material</h2>
+                        <p className="theme-text-muted text-sm md:text-base mb-4">
                             Paste your notes, textbook content, or any material you want to study. The AI will convert it into multiple choice questions.
                         </p>
 
                         {/* Set Selector */}
-                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        <div className="theme-inset-box mb-6 p-4 rounded-lg">
+                            <label className="theme-text block text-sm font-medium mb-3">
                                 Select or Create Question Set
                             </label>
                             
@@ -1811,12 +1826,12 @@ Order questions so that:
                                     value={newSetName}
                                     onChange={(e) => setNewSetName(e.target.value)}
                                     placeholder="New set name..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
+                                    className="theme-input flex-1 rounded-lg px-3 py-2 text-sm"
                                     onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                 />
                                 <button
                                     onClick={createQuestionSet}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                                    className="theme-btn-primary rounded-lg px-4 py-2 text-sm transition"
                                 >
                                     Create Set
                                 </button>
@@ -1825,7 +1840,7 @@ Order questions so that:
                             {/* Select existing set */}
                             {Object.keys(questionSets).length > 0 && (
                                 <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                                    <label className="theme-text-muted block text-xs font-medium mb-2">
                                         Or select existing set:
                                     </label>
                                     <select
@@ -1835,7 +1850,7 @@ Order questions so that:
                                                 selectQuestionSet(e.target.value);
                                             }
                                         }}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white"
+                                        className="theme-select w-full rounded-lg px-3 py-2 text-sm"
                                     >
                                         <option value="">-- Select a set --</option>
                                         {Object.entries(questionSets).map(([setId, set]) => (
@@ -1848,8 +1863,8 @@ Order questions so that:
                             )}
                             
                             {currentSetId && questionSets[currentSetId] && (
-                                <div className="mt-3 text-sm font-semibold text-blue-700 dark:text-blue-400">
-                                    ✓ Selected: {questionSets[currentSetId].name}
+                                <div className="theme-accent-label mt-3 text-sm font-semibold">
+                                    Selected: {questionSets[currentSetId].name}
                                 </div>
                             )}
                         </div>
@@ -1858,11 +1873,11 @@ Order questions so that:
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             placeholder="Example: The mitochondria is the powerhouse of the cell. It produces ATP through cellular respiration..."
-                            className="w-full h-48 md:h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
+                            className="theme-input w-full h-48 md:h-64 rounded-lg px-4 py-2 mb-4 text-base"
                         />
 
                         {error && (
-                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+                            <div className="theme-error px-4 py-3 rounded mb-4">
                                 {error}
                             </div>
                         )}
@@ -1870,12 +1885,12 @@ Order questions so that:
                         <button
                             onClick={generateQuestions}
                             disabled={isGenerating || !inputText.trim() || !currentSetId}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold min-h-[44px] text-sm md:text-base"
+                            className="theme-btn-primary setup-action-btn w-full rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition disabled:opacity-45 disabled:cursor-not-allowed"
                         >
                             {isGenerating ? 'Generating Questions...' : 'Generate Multiple Choice Questions'}
                         </button>
                         {!currentSetId && (
-                            <p className="text-sm text-red-600 mt-2 text-center">
+                            <p className="theme-text-muted mt-2 text-center text-sm">
                                 Please select or create a question set first
                             </p>
                         )}
@@ -1888,46 +1903,44 @@ Order questions so that:
     // Manual Input View
     if (currentView === 'manual') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+            <div className="theme-page min-h-screen p-4 md:p-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8">
+                    <div className="theme-card rounded-lg shadow-xl p-4 md:p-8">
                         <button
                             onClick={() => setCurrentView('setup')}
-                            className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+                            className="theme-link mb-4 flex items-center hover:opacity-80"
                         >
                             ← Back to Setup
                         </button>
 
-                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4 md:mb-6">Add Question Manually</h2>
+                        <h2 className="theme-text text-xl md:text-2xl font-bold mb-4 md:mb-6">Add Question Manually</h2>
 
                         {/* Set Selector */}
-                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        <div className="theme-inset-box mb-6 p-4 rounded-lg">
+                            <label className="theme-text block text-sm font-medium mb-3">
                                 Select or Create Question Set
                             </label>
                             
-                            {/* Create new set */}
                             <div className="flex flex-col sm:flex-row gap-2 mb-3">
                                 <input
                                     type="text"
                                     value={newSetName}
                                     onChange={(e) => setNewSetName(e.target.value)}
                                     placeholder="New set name..."
-                                    className="flex-1 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 min-h-[44px]"
+                                    className="theme-input flex-1 rounded-lg px-3 py-2.5 text-sm min-h-[44px]"
                                     onKeyPress={(e) => e.key === 'Enter' && createQuestionSet()}
                                 />
                                 <button
                                     onClick={createQuestionSet}
-                                    className="bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition text-sm min-h-[44px] whitespace-nowrap"
+                                    className="theme-btn-primary rounded-lg px-4 py-2.5 text-sm min-h-[44px] whitespace-nowrap transition"
                                 >
                                     Create Set
                                 </button>
                             </div>
                             
-                            {/* Select existing set */}
                             {Object.keys(questionSets).length > 0 && (
                                 <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                                    <label className="theme-text-muted block text-xs font-medium mb-2">
                                         Or select existing set:
                                     </label>
                                     <select
@@ -1937,7 +1950,7 @@ Order questions so that:
                                                 selectQuestionSet(e.target.value);
                                             }
                                         }}
-                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-600 dark:text-white min-h-[44px]"
+                                        className="theme-select w-full rounded-lg px-3 py-2.5 text-sm min-h-[44px]"
                                     >
                                         <option value="">-- Select a set --</option>
                                         {Object.entries(questionSets).map(([setId, set]) => (
@@ -1950,28 +1963,28 @@ Order questions so that:
                             )}
                             
                             {currentSetId && questionSets[currentSetId] && (
-                                <div className="mt-3 text-sm font-semibold text-blue-700 dark:text-blue-400">
-                                    ✓ Selected: {questionSets[currentSetId].name}
+                                <div className="theme-accent-label mt-3 text-sm font-semibold">
+                                    Selected: {questionSets[currentSetId].name}
                                 </div>
                             )}
                         </div>
 
                         {error && (
-                            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+                            <div className="theme-error px-4 py-3 rounded mb-4">
                                 {error}
                             </div>
                         )}
 
                         <div className="space-y-4 mb-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="theme-text block text-sm font-medium mb-2">
                                     Question
                                 </label>
                                 <textarea
                                     value={manualQuestion.question}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, question: e.target.value }))}
                                     placeholder="Enter your question here..."
-                                    className="w-full h-24 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
+                                    className="theme-input w-full h-24 rounded-lg px-4 py-2 text-base"
                                 />
                             </div>
 
@@ -1988,13 +2001,13 @@ Order questions so that:
                                                 correctAnswer: e.target.checked ? [] : null
                                             }));
                                         }}
-                                        className="w-4 h-4 text-blue-600"
+                                        className="theme-checkbox w-4 h-4"
                                     />
-                                    <label htmlFor="isMultiAnswer" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <label htmlFor="isMultiAnswer" className="theme-text text-sm font-medium">
                                         Select all that apply (multi-answer question)
                                     </label>
                                 </div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="theme-text block text-sm font-medium mb-2">
                                     Answer Choices
                                 </label>
                                 {manualQuestion.options.map((option, index) => (
@@ -2013,7 +2026,7 @@ Order questions so that:
                                                         }
                                                     });
                                                 }}
-                                                className="w-5 h-5 text-blue-600"
+                                                className="theme-checkbox w-5 h-5"
                                             />
                                         ) : (
                                             <input
@@ -2021,7 +2034,7 @@ Order questions so that:
                                                 name="correctAnswer"
                                                 checked={manualQuestion.correctAnswer === index}
                                                 onChange={() => setManualQuestion(prev => ({ ...prev, correctAnswer: index }))}
-                                                className="w-5 h-5 text-blue-600"
+                                                className="theme-checkbox w-5 h-5"
                                             />
                                         )}
                                         <input
@@ -2029,12 +2042,12 @@ Order questions so that:
                                             value={option}
                                             onChange={(e) => updateOption(index, e.target.value)}
                                             placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 min-h-[44px] text-base"
+                                            className="theme-input flex-1 rounded-lg px-4 py-2.5 min-h-[44px] text-base"
                                         />
                                         {manualQuestion.options.length > 2 && (
                                             <button
                                                 onClick={() => removeOption(index)}
-                                                className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition min-h-[44px] min-w-[60px]"
+                                                className="theme-btn-small-danger rounded-lg px-3 py-2 transition min-h-[44px] min-w-[60px]"
                                             >
                                                 Remove
                                             </button>
@@ -2043,21 +2056,21 @@ Order questions so that:
                                 ))}
                                 <button
                                     onClick={addOption}
-                                    className="mt-2 px-4 py-2.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition border border-blue-300 dark:border-blue-600 min-h-[44px] font-medium"
+                                    className="theme-btn-secondary mt-2 rounded-lg px-4 py-2.5 min-h-[44px] font-medium transition"
                                 >
                                     + Add Option
                                 </button>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="theme-text block text-sm font-medium mb-2">
                                     Explanation (Optional)
                                 </label>
                                 <textarea
                                     value={manualQuestion.explanation}
                                     onChange={(e) => setManualQuestion(prev => ({ ...prev, explanation: e.target.value }))}
                                     placeholder="Explain why the correct answer is correct..."
-                                    className="w-full h-20 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base"
+                                    className="theme-input w-full h-20 rounded-lg px-4 py-2 text-base"
                                 />
                             </div>
                         </div>
@@ -2065,31 +2078,31 @@ Order questions so that:
                         <button
                             onClick={saveManualQuestion}
                             disabled={!currentSetId}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold mb-4 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px] text-sm md:text-base"
+                            className="theme-btn-primary setup-action-btn w-full rounded-lg py-3 px-4 font-semibold mb-4 min-h-[44px] text-sm md:text-base transition disabled:opacity-45 disabled:cursor-not-allowed"
                         >
                             Save Question
                         </button>
                         {!currentSetId && (
-                            <p className="text-sm text-red-600 dark:text-red-400 mb-4 text-center">
+                            <p className="theme-text-muted mb-4 text-center text-sm">
                                 Please select or create a question set first
                             </p>
                         )}
 
                         {savedManualQuestions.length > 0 && (
-                            <div className="mt-8 border-t dark:border-gray-600 pt-6">
+                            <div className="theme-divider mt-8 border-t pt-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                                    <h3 className="theme-text text-lg font-semibold">
                                         Saved Questions ({savedManualQuestions.length})
                                     </h3>
                                     <div className="flex gap-2 flex-wrap">
                                         <button
                                             onClick={exportQuestions}
-                                            className="bg-teal-600 text-white py-1.5 px-3 rounded-lg hover:bg-teal-700 transition text-sm"
+                                            className="theme-btn-secondary rounded-lg py-1.5 px-3 text-sm transition"
                                         >
-                                            📥 Export
+                                            Export
                                         </button>
-                                        <label className="bg-orange-600 text-white py-1.5 px-3 rounded-lg hover:bg-orange-700 transition text-sm cursor-pointer">
-                                            📤 Import
+                                        <label className="theme-btn-secondary rounded-lg py-1.5 px-3 text-sm cursor-pointer transition">
+                                            Import
                                             <input
                                                 type="file"
                                                 accept=".json"
@@ -2099,19 +2112,19 @@ Order questions so that:
                                         </label>
                                     </div>
                                 </div>
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                <div className="space-y-3 max-h-96 overflow-y-auto setup-set-list">
                                     {savedManualQuestions.map((q) => (
-                                        <div key={q.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <div key={q.id} className="theme-list-item rounded-lg p-4 transition">
                                             <div className="flex justify-between items-start mb-2">
-                                                <p className="font-medium text-gray-800 dark:text-white flex-1">{q.question}</p>
+                                                <p className="theme-text font-medium flex-1">{q.question}</p>
                                                 <button
                                                     onClick={() => deleteManualQuestion(q.id)}
-                                                    className="ml-4 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm"
+                                                    className="theme-btn-small-danger ml-4 rounded px-2 py-1 text-sm transition"
                                                 >
                                                     Delete
                                                 </button>
                                             </div>
-                                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                                            <div className="theme-text-muted text-sm">
                                                 <span className="mr-4">
                                                     Answered: {q.timesAnswered || 0} times
                                                 </span>
@@ -2148,13 +2161,13 @@ Order questions so that:
         }
         if (currentQuestions.length === 0) {
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+                <div className="theme-page min-h-screen p-4 md:p-8">
                     <div className="max-w-2xl mx-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 text-center">
-                            <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm md:text-base">No questions available for practice.</p>
+                        <div className="theme-card rounded-lg shadow-xl p-4 md:p-8 text-center">
+                            <p className="theme-text-muted mb-4 text-sm md:text-base">No questions available for practice.</p>
                             <button
                                 onClick={() => setCurrentView('setup')}
-                                className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition min-h-[44px] font-medium text-sm md:text-base"
+                                className="theme-btn-primary setup-action-btn rounded-lg py-3 px-4 min-h-[44px] font-medium text-sm md:text-base transition"
                             >
                                 Back to Setup
                             </button>
@@ -2172,55 +2185,53 @@ Order questions so that:
         };
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+            <div className="theme-page min-h-screen p-4 md:p-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex gap-4 relative">
                         {/* Sidebar - Question List */}
                         {showSidebar && (
                             <>
-                                {/* Mobile overlay backdrop */}
                                 <div 
                                     className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
                                     onClick={() => setShowSidebar(false)}
                                 ></div>
-                                {/* Sidebar */}
-                                <div className="fixed md:sticky left-0 top-0 md:top-4 w-80 md:w-64 h-full md:h-fit bg-white dark:bg-gray-800 rounded-lg md:rounded-lg shadow-xl p-4 z-50 md:z-auto overflow-y-auto md:overflow-y-visible">
+                                <div className="theme-card fixed md:sticky left-0 top-0 md:top-4 w-80 md:w-64 h-full md:h-fit rounded-lg shadow-xl p-4 z-50 md:z-auto overflow-y-auto md:overflow-y-visible setup-set-list">
                                     <div className="flex justify-between items-center mb-3">
-                                        <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Questions</h3>
+                                        <h3 className="theme-text font-semibold text-sm">Questions</h3>
                                         <button
                                             onClick={() => setShowSidebar(false)}
-                                            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                            className="theme-text-muted hover:opacity-70 text-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
                                         >
                                             ✕
                                         </button>
                                     </div>
-                                <div className="space-y-1 max-h-[600px] overflow-y-auto">
+                                <div className="space-y-1 max-h-[600px] overflow-y-auto setup-set-list">
                                     {currentQuestions.map((q, index) => {
                                         const result = getQuestionResult(q, index);
                                         const isCurrent = index === currentQuestionIndex;
                                         const questionId = q.id || `ai-${index}`;
                                         
-                                        let bgColor = "bg-gray-50 dark:bg-gray-700";
-                                        if (isCurrent) bgColor = "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 dark:border-blue-400";
-                                        else if (result === true) bgColor = "bg-green-50 dark:bg-green-900";
-                                        else if (result === false) bgColor = "bg-red-50 dark:bg-red-900";
+                                        let itemClass = "theme-sidebar-item";
+                                        if (isCurrent) itemClass = "theme-sidebar-current";
+                                        else if (result === true) itemClass = "theme-sidebar-correct";
+                                        else if (result === false) itemClass = "theme-sidebar-wrong";
                                         
                                         return (
                                             <button
                                                 key={questionId}
                                                 onClick={() => jumpToQuestion(index)}
-                                                className={`w-full text-left px-3 py-2 rounded text-sm transition ${bgColor} hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center justify-between`}
+                                                className={`w-full text-left px-3 py-2 rounded text-sm transition ${itemClass} flex items-center justify-between`}
                                             >
                                                 <span className={`flex items-center ${isCurrent ? 'font-semibold' : ''}`}>
-                                                    <span className="mr-2 text-xs text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                                                    <span className="truncate max-w-[150px] text-gray-800 dark:text-white">
+                                                    <span className="theme-text-muted mr-2 text-xs">#{index + 1}</span>
+                                                    <span className="theme-text truncate max-w-[150px]">
                                                         {q.question.substring(0, 30)}...
                                                     </span>
                                                 </span>
                                                 <span className="ml-2 flex-shrink-0">
-                                                    {result === true && <span className="text-green-600 dark:text-green-400 font-bold">✓</span>}
-                                                    {result === false && <span className="text-red-600 dark:text-red-400 font-bold">✗</span>}
-                                                    {result === undefined && <span className="text-gray-300 dark:text-gray-600">○</span>}
+                                                    {result === true && <span className="theme-accent-check font-bold">✓</span>}
+                                                    {result === false && <span className="theme-accent-wrong font-bold">✗</span>}
+                                                    {result === undefined && <span className="theme-text-muted opacity-50">○</span>}
                                                 </span>
                                             </button>
                                         );
@@ -2231,11 +2242,11 @@ Order questions so that:
                         )}
                         
                         {/* Main Content */}
-                        <div className={`flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
+                        <div className={`theme-card flex-1 rounded-lg shadow-xl p-4 md:p-8 ${!showSidebar ? 'max-w-3xl mx-auto' : ''}`}>
                             {!showSidebar && (
                                 <button
                                     onClick={() => setShowSidebar(true)}
-                                    className="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center min-h-[44px]"
+                                    className="theme-link mb-4 text-sm flex items-center min-h-[44px] hover:opacity-80"
                                 >
                                     ☰ Show Question List
                                 </button>
@@ -2246,44 +2257,38 @@ Order questions so that:
                                     onClick={() => {
                                         setCurrentView('setup');
                                     }}
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 min-h-[44px] px-2"
+                                    className="theme-link min-h-[44px] px-2 hover:opacity-80"
                                 >
                                     ← <span className="hidden sm:inline">Exit Practice</span><span className="sm:hidden">Exit</span>
                                 </button>
-                                <button
-                                    onClick={toggleDarkMode}
-                                    className="bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition text-sm font-medium min-h-[44px]"
-                                    title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-                                >
-                                    {darkMode ? "☀️" : "🌙"}
-                                </button>
+                                <ThemeToggleButton darkMode={darkMode} onToggle={toggleDarkMode} />
                             </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                            <div className="theme-text-muted text-sm">
                                 Question {currentQuestionIndex + 1} of {currentQuestions.length}
                             </div>
                         </div>
 
                         <div className="mb-6">
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Score: {score.correct} / {score.total}</div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div className="theme-text-muted text-sm mb-2">Score: {score.correct} / {score.total}</div>
+                            <div className="theme-progress-track w-full rounded-full h-2">
                                 <div
-                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    className="theme-progress-fill h-2 rounded-full transition-all"
                                     style={{ width: `${((currentQuestionIndex + 1) / currentQuestions.length) * 100}%` }}
                                 ></div>
                             </div>
                             {currentQuestion.id && (
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <div className="theme-text-muted text-xs mt-2">
                                     Answered {currentQuestion.timesAnswered || 0} times • 
                                     Correct {currentQuestion.timesCorrect || 0} times
                                 </div>
                             )}
                         </div>
 
-                        <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-2">
+                        <h3 className="theme-text text-lg md:text-xl font-semibold mb-2">
                             {currentQuestion.question}
                         </h3>
                         {isMultiAnswer(currentQuestion) && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 italic font-semibold bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 px-3 py-2 rounded">
+                            <p className="theme-multi-hint text-sm mb-6 italic font-semibold px-3 py-2 rounded">
                                 (Select all that apply - Multiple answers required)
                             </p>
                         )}
@@ -2296,22 +2301,17 @@ Order questions so that:
                                     ? Array.isArray(currentQuestion.correctAnswer) && currentQuestion.correctAnswer.includes(index)
                                     : index === currentQuestion.correctAnswer;
                                 
-                                let buttonClass = "w-full text-left px-4 py-3 border-2 rounded-lg transition flex items-start gap-3 ";
+                                let buttonClass = "theme-option-btn w-full text-left px-4 py-3 rounded-lg transition flex items-start gap-3 min-h-[44px] text-sm md:text-base ";
                                 
                                 if (!showAnswer) {
                                     if (isSelected) {
-                                        buttonClass += "border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900";
-                                    } else {
-                                        buttonClass += "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500";
+                                        buttonClass += "theme-option-selected";
                                     }
                                 } else {
-                                    // Show answer feedback
                                     if (isCorrectOption) {
-                                        buttonClass += "border-green-600 dark:border-green-400 bg-green-50 dark:bg-green-900";
+                                        buttonClass += "theme-option-correct";
                                     } else if (isSelected && !isCorrectOption) {
-                                        buttonClass += "border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900";
-                                    } else {
-                                        buttonClass += "border-gray-300 dark:border-gray-600";
+                                        buttonClass += "theme-option-wrong";
                                     }
                                 }
 
@@ -2320,12 +2320,12 @@ Order questions so that:
                                         key={index}
                                         onClick={() => handleAnswerSelect(index, currentQuestion)}
                                         disabled={showAnswer}
-                                        className={buttonClass + " text-gray-800 dark:text-white min-h-[44px] text-sm md:text-base"}
+                                        className={buttonClass}
                                     >
                                         <span className={`flex-shrink-0 mt-0.5 ${isMulti ? 'w-5 h-5 border-2 rounded' : 'w-5 h-5 border-2 rounded-full'} ${
                                             isSelected 
-                                                ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' 
-                                                : 'bg-white dark:bg-gray-700 border-gray-400 dark:border-gray-500'
+                                                ? 'theme-choice-indicator-selected' 
+                                                : 'theme-choice-indicator'
                                         }`}>
                                             {isSelected && (
                                                 <span className="text-white text-xs flex items-center justify-center h-full">
@@ -2345,7 +2345,6 @@ Order questions so that:
                             const isMulti = isMultiAnswer(currentQuestion);
                             let isCorrect;
                             if (isMulti) {
-                                // Normalize correctAnswer to array - if it's a single number, convert to array
                                 const correctAnswerArray = Array.isArray(currentQuestion.correctAnswer) 
                                     ? currentQuestion.correctAnswer 
                                     : [currentQuestion.correctAnswer];
@@ -2360,21 +2359,19 @@ Order questions so that:
                             
                             return (
                                 <div className={`p-4 rounded-lg mb-6 ${
-                                    isCorrect 
-                                        ? 'bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600' 
-                                        : 'bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600'
+                                    isCorrect ? 'theme-feedback-correct' : 'theme-feedback-wrong'
                                 }`}>
-                                    <p className="font-semibold mb-2 text-gray-800 dark:text-white">
+                                    <p className="theme-text font-semibold mb-2">
                                         {isCorrect ? '✓ Correct!' : '✗ Incorrect'}
                                     </p>
                                     {!isCorrect && isMulti && (
-                                        <p className="text-sm mb-2 text-gray-700 dark:text-gray-300">
+                                        <p className="theme-text-muted text-sm mb-2">
                                             Correct answers: {Array.isArray(currentQuestion.correctAnswer) 
                                                 ? currentQuestion.correctAnswer.map(i => String.fromCharCode(65 + i)).join(', ')
                                                 : String.fromCharCode(65 + currentQuestion.correctAnswer)}
                                         </p>
                                     )}
-                                    <p className="text-sm text-gray-700 dark:text-gray-300">{currentQuestion.explanation}</p>
+                                    <p className="theme-text-muted text-sm">{currentQuestion.explanation}</p>
                                 </div>
                             );
                         })()}
@@ -2386,14 +2383,14 @@ Order questions so that:
                                     disabled={isMultiAnswer(currentQuestion) 
                                         ? selectedAnswers.length === 0 
                                         : selectedAnswer === null}
-                                    className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold min-h-[44px] text-sm md:text-base"
+                                    className="theme-btn-primary setup-action-btn flex-1 rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition disabled:opacity-45 disabled:cursor-not-allowed"
                                 >
                                     Submit Answer{isMultiAnswer(currentQuestion) && selectedAnswers.length > 0 && <span className="hidden sm:inline"> ({selectedAnswers.length} selected)</span>}
                                 </button>
                             ) : (
                                 <button
                                     onClick={nextQuestion}
-                                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold min-h-[44px] text-sm md:text-base"
+                                    className="theme-btn-primary setup-action-btn flex-1 rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition"
                                 >
                                     {currentQuestionIndex < currentQuestions.length - 1 ? <span><span className="hidden sm:inline">Next Question </span>→</span> : 'View Results'}
                                 </button>
@@ -2411,16 +2408,16 @@ Order questions so that:
         const percentage = Math.round((score.correct / score.total) * 100);
         
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+            <div className="theme-page min-h-screen p-4 md:p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 md:p-8 text-center">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-4">
+                    <div className="theme-card rounded-lg shadow-xl p-4 md:p-8 text-center">
+                        <h2 className="theme-text text-2xl md:text-3xl font-bold mb-4">
                             Practice Complete!
                         </h2>
                         
                         <div className="my-6 md:my-8">
-                            <div className="text-4xl md:text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">{percentage}%</div>
-                            <div className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
+                            <div className="theme-stat-value text-4xl md:text-6xl font-bold mb-2">{percentage}%</div>
+                            <div className="theme-text-muted text-lg md:text-xl">
                                 {score.correct} out of {score.total} correct
                             </div>
                         </div>
@@ -2428,19 +2425,19 @@ Order questions so that:
                         <div className="space-y-3">
                             <button
                                 onClick={restartPractice}
-                                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-semibold min-h-[44px] text-sm md:text-base"
+                                className="theme-btn-primary setup-action-btn w-full rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition"
                             >
                                 Practice Again
                             </button>
                             <button
                                 onClick={startNewSet}
-                                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold min-h-[44px] text-sm md:text-base"
+                                className="theme-btn-secondary setup-action-btn w-full rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition"
                             >
                                 Create New Questions
                             </button>
                             <button
                                 onClick={() => setCurrentView('setup')}
-                                className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition font-semibold min-h-[44px] text-sm md:text-base"
+                                className="theme-btn-secondary setup-action-btn w-full rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition"
                             >
                                 Back to Home
                             </button>

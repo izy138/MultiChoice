@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 // Use native fetch (Node.js 18+) instead of node-fetch to avoid punycode deprecation warning
 
 const app = express();
@@ -47,8 +48,12 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+// Serve frontend and static assets (index.html, app.jsx, JSON question files, etc.)
+app.use(express.static(path.join(__dirname)));
+
 app.listen(PORT, () => {
-    console.log(`Proxy server running on http://localhost:${PORT}`);
-    console.log(`Make sure your frontend calls http://localhost:${PORT}/api/anthropic/messages`);
+    console.log(`MultiChoice running at http://localhost:${PORT}`);
+    console.log(`API proxy: http://localhost:${PORT}/api/anthropic/messages`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
 });
 
