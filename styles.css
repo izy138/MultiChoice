@@ -27,8 +27,8 @@ body {
 :root {
     --theme-olive: #89A8B2;
     --theme-sage: #B3C8CF;
-    --theme-beige: #E5E1DA;
-    --theme-cream: #F1F0E8;
+    --theme-beige: #efeeea;
+    --theme-cream: #cadfdf;
     --theme-olive-hover: #759aa6;
     --theme-text: #2f3e44;
     --theme-text-muted: #5a6b72;
@@ -275,7 +275,7 @@ body {
 .theme-option-btn {
     border: 2px solid var(--theme-sage);
     color: var(--theme-text);
-    background-color: var(--theme-cream);
+    background-color: color-mix(in srgb, var(--theme-cream) 75%, #ffffff);
 }
 
 .theme-option-btn:hover:not(:disabled) {
@@ -296,41 +296,43 @@ body {
 }
 
 .theme-option-correct {
-    border-color: var(--theme-olive);
-    background-color: color-mix(in srgb, var(--theme-olive) 22%, var(--theme-cream));
+    border-color: #439a6c;
+    background-color: #d8ede0;
 }
 
 .dark .theme-option-correct {
-    background-color: #3a4a52;
+    background-color: #2d4538;
+    border-color: #5aaa82;
 }
 
 .theme-option-wrong {
-    border-color: #9a8585;
-    background-color: color-mix(in srgb, var(--theme-beige) 55%, #d4bcbc);
+    border-color: #c75c5c;
+    background-color: #f2dede;
 }
 
 .dark .theme-option-wrong {
-    background-color: #3d3535;
-    border-color: #8a7070;
+    background-color: #3d2f2f;
+    border-color: #b08080;
 }
 
 .theme-feedback-correct {
-    background-color: color-mix(in srgb, var(--theme-sage) 45%, var(--theme-cream));
-    border: 1px solid var(--theme-olive);
+    background-color: #d8ede0;
+    border: 1px solid #439a6c;
 }
 
 .dark .theme-feedback-correct {
-    background-color: #3a4a52;
+    background-color: #2d4538;
+    border-color: #5aaa82;
 }
 
 .theme-feedback-wrong {
-    background-color: color-mix(in srgb, var(--theme-beige) 50%, #d4bcbc);
-    border: 1px solid #9a8585;
+    background-color: #f2dede;
+    border: 1px solid #c75c5c;
 }
 
 .dark .theme-feedback-wrong {
-    background-color: #3d3535;
-    border-color: #8a7070;
+    background-color: #3d2f2f;
+    border-color: #b08080;
 }
 
 .theme-multi-hint {
@@ -370,19 +372,19 @@ body {
 }
 
 .theme-sidebar-correct {
-    background-color: color-mix(in srgb, var(--theme-olive) 18%, var(--theme-cream));
+    background-color: #d8ede0;
 }
 
 .dark .theme-sidebar-correct {
-    background-color: #354048;
+    background-color: #2d4538;
 }
 
 .theme-sidebar-wrong {
-    background-color: color-mix(in srgb, var(--theme-beige) 40%, #d4bcbc);
+    background-color: #f2dede;
 }
 
 .dark .theme-sidebar-wrong {
-    background-color: #3d3535;
+    background-color: #3d2f2f;
 }
 
 .theme-list-item {
@@ -407,16 +409,24 @@ body {
 }
 
 .theme-accent-check {
-    color: var(--theme-olive);
+    color: #2f855a;
+}
+
+.dark .theme-accent-check {
+    color: #6db892;
 }
 
 .theme-accent-wrong {
-    color: #9a8585;
+    color: #b04545;
+}
+
+.dark .theme-accent-wrong {
+    color: #c88888;
 }
 
 .theme-choice-indicator {
     border: 2px solid var(--theme-sage);
-    background-color: var(--theme-cream);
+    background-color: color-mix(in srgb, var(--theme-cream) 75%, #ffffff);
 }
 
 .theme-choice-indicator-selected {
