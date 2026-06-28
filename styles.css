@@ -3,6 +3,11 @@
 
 html {
     overflow-x: hidden;
+    background-color: var(--theme-cream);
+}
+
+.dark html {
+    background-color: #1e2629;
 }
 
 body {
@@ -10,10 +15,12 @@ body {
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: inherit;
 }
 
 #root {
     min-height: 100vh;
+    background-color: inherit;
 }
 
 /* Homepage color theme — blue-gray palette */
@@ -42,7 +49,6 @@ body {
 /* Homepage at 100% zoom — matches browser 90% zoom appearance */
 .theme-page-home {
     zoom: 0.9;
-    min-height: calc(100vh / 0.9);
 }
 
 .dark .theme-page {

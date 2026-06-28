@@ -26,7 +26,7 @@ function ThemeToggleButton({ darkMode, onToggle, className = '' }) {
                         strokeWidth="1.75"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M21 14.5A7.5 7.5 0 0 1 9.5 3 6 6 0 1 0 21 14.5z"
+                        d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
                     />
                 </svg>
             )}
@@ -1432,7 +1432,8 @@ Order questions so that:
         );
 
         return (
-            <div className="theme-page theme-page-home min-h-screen">
+            <div className="theme-page min-h-screen">
+                <div className="theme-page-home">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
                     {/* Header */}
                     <header className="mb-8 flex items-start justify-between gap-4 lg:mb-10">
@@ -1706,8 +1707,17 @@ Order questions so that:
                         </section>
                     </div>
 
-                    {/* API Key Modal */}
-                    {showApiKeyModal && (
+                    {/* Error display - always visible */}
+                    {error && (
+                        <div className="theme-error mt-6 rounded-xl px-4 py-3 text-sm">
+                            {error}
+                        </div>
+                    )}
+                </div>
+                </div>
+
+                {/* API Key Modal — outside zoom wrapper so overlay fills viewport */}
+                {showApiKeyModal && (
                             <div 
                                 className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4"
                                 onClick={(e) => {
@@ -1783,14 +1793,6 @@ Order questions so that:
                                 </div>
                             </div>
                         )}
-                    
-                    {/* Error display - always visible */}
-                    {error && (
-                        <div className="theme-error mt-6 rounded-xl px-4 py-3 text-sm">
-                            {error}
-                        </div>
-                    )}
-                </div>
             </div>
         );
     }
