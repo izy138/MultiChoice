@@ -43,7 +43,8 @@ function App() {
     const [selectedAnswer, setSelectedAnswer] = useState(null); // Can be a single index or array for multi-answer
     const [selectedAnswers, setSelectedAnswers] = useState([]); // Array for multi-answer questions
     const [showAnswer, setShowAnswer] = useState(false);
-    const [score, setScore] = useState({ correct: 0, total: 0 });
+    const [practicePhase, setPracticePhase] = useState('main'); // 'main' | 'review'
+    const [reviewIndices, setReviewIndices] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState('');
     
@@ -733,8 +734,7 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
                 }
                 
                 setCurrentView('practice');
-                setCurrentQuestionIndex(0);
-                setScore({ correct: 0, total: 0 });
+                resetPracticeSession({ resetResults: true });
             } else {
                 throw new Error('No questions generated');
             }
@@ -807,9 +807,69 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
         return questions;
     };
 
+    const getQuestionKey = (question, indexInAllQuestions) => {
+        return question.id || `ai-${indexInAllQuestions}`;
+    };
+
+    const computeScore = (allQuestions, results) => {
+        let correct = 0;
+        let answered = 0;
+        allQuestions.forEach((question, index) => {
+            const key = getQuestionKey(question, index);
+            if (results[key] !== undefined) {
+                answered++;
+                if (results[key] === true) correct++;
+            }
+        });
+        return { correct, answered, total: allQuestions.length };
+    };
+
+    const getWrongQuestionIndices = (allQuestions, results) => {
+        return allQuestions.reduce((indices, question, index) => {
+            const key = getQuestionKey(question, index);
+            if (results[key] === false) {
+                indices.push(index);
+            }
+            return indices;
+        }, []);
+    };
+
+    const getActivePracticeContext = () => {
+        const allQuestions = getCurrentQuestions();
+        if (practicePhase === 'review' && reviewIndices.length > 0) {
+            const sourceIndex = reviewIndices[currentQuestionIndex];
+            return {
+                allQuestions,
+                activeQuestions: reviewIndices.map((index) => allQuestions[index]),
+                activeIndex: currentQuestionIndex,
+                sourceIndex,
+                currentQuestion: allQuestions[sourceIndex],
+            };
+        }
+        return {
+            allQuestions,
+            activeQuestions: allQuestions,
+            activeIndex: currentQuestionIndex,
+            sourceIndex: currentQuestionIndex,
+            currentQuestion: allQuestions[currentQuestionIndex],
+        };
+    };
+
+    const resetPracticeSession = ({ resetResults = false } = {}) => {
+        setCurrentQuestionIndex(0);
+        setSelectedAnswer(null);
+        setSelectedAnswers([]);
+        setShowAnswer(false);
+        setPracticePhase('main');
+        setReviewIndices([]);
+        if (resetResults) {
+            setQuestionResults({});
+        }
+    };
+
     const submitAnswer = () => {
-        const currentQuestions = getCurrentQuestions();
-        const currentQuestion = currentQuestions[currentQuestionIndex];
+        const { currentQuestion, sourceIndex } = getActivePracticeContext();
+        if (!currentQuestion || showAnswer) return;
         
         // Check if question requires answers
         if (isMultiAnswer(currentQuestion)) {
@@ -840,61 +900,62 @@ The correctAnswer should be the index (0-3) for single answer questions, or arra
             isCorrect = selectedAnswer === currentQuestion.correctAnswer;
         }
         
-        setScore(prev => ({
-            correct: prev.correct + (isCorrect ? 1 : 0),
-            total: prev.total + 1
+        const questionKey = getQuestionKey(currentQuestion, sourceIndex);
+        const previousResult = questionResults[questionKey];
+        const isRedo = previousResult !== undefined;
+
+        setQuestionResults(prev => ({
+            ...prev,
+            [questionKey]: isCorrect
         }));
 
-        // Track result for sidebar
         if (currentQuestion.id) {
-            setQuestionResults(prev => ({
-                ...prev,
-                [currentQuestion.id]: isCorrect
-            }));
-        } else {
-            // For AI-generated questions without ID, use index
-            setQuestionResults(prev => ({
-                ...prev,
-                [`ai-${currentQuestionIndex}`]: isCorrect
-            }));
-        }
-
-        // Update performance if it's a manual question
-        if (currentQuestion.id) {
-            updateQuestionPerformance(currentQuestion.id, isCorrect);
+            updateQuestionPerformance(currentQuestion.id, isCorrect, { isRedo, previousResult });
         }
     };
 
     const nextQuestion = () => {
-        const currentQuestions = getCurrentQuestions();
-        if (currentQuestionIndex < currentQuestions.length - 1) {
-            // Move to next question - useEffect will handle resetting selections
+        const { activeQuestions, allQuestions } = getActivePracticeContext();
+
+        if (currentQuestionIndex < activeQuestions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
             setShowAnswer(false);
-        } else {
-            setCurrentView('results');
+            return;
         }
+
+        if (practicePhase === 'main') {
+            const wrongIndices = getWrongQuestionIndices(allQuestions, questionResults);
+            if (wrongIndices.length > 0) {
+                setPracticePhase('review');
+                setReviewIndices(wrongIndices);
+                setCurrentQuestionIndex(0);
+                setShowAnswer(false);
+                return;
+            }
+        }
+
+        setCurrentView('results');
     };
 
     const restartPractice = () => {
-        setCurrentQuestionIndex(0);
-        setSelectedAnswer(null);
-        setSelectedAnswers([]); // Reset multi-answer selection
-        setShowAnswer(false);
-        setScore({ correct: 0, total: 0 });
+        resetPracticeSession({ resetResults: true });
         setPracticeOrder([]);
-        setQuestionResults({}); // Reset question results
         setCurrentView('practice');
     };
 
     // Jump to specific question
     const jumpToQuestion = (index) => {
-        const currentQuestions = getCurrentQuestions();
-        if (index >= 0 && index < currentQuestions.length) {
-            // Jump to question - useEffect will handle resetting selections
+        const allQuestions = getCurrentQuestions();
+        if (index < 0 || index >= allQuestions.length) return;
+
+        if (practicePhase === 'review') {
+            const reviewPosition = reviewIndices.indexOf(index);
+            if (reviewPosition === -1) return;
+            setCurrentQuestionIndex(reviewPosition);
+        } else {
             setCurrentQuestionIndex(index);
-            setShowAnswer(false);
         }
+        setShowAnswer(false);
     };
 
     const startNewSet = () => {
@@ -1355,17 +1416,13 @@ Order questions so that:
             // Final validation - must have all questions
             if (orderedIds.length === allQuestionIds.length) {
                 setPracticeOrder(orderedIds);
-                setQuestionResults({}); // Reset question results
+                resetPracticeSession({ resetResults: true });
                 setCurrentView('practice');
-                setCurrentQuestionIndex(0);
-                setScore({ correct: 0, total: 0 });
             } else {
                 // Fallback: use all questions in original order if AI ordering fails
                 setPracticeOrder(allQuestionIds);
-                setQuestionResults({}); // Reset question results
+                resetPracticeSession({ resetResults: true });
                 setCurrentView('practice');
-                setCurrentQuestionIndex(0);
-                setScore({ correct: 0, total: 0 });
             }
         } catch (err) {
             setError(`Failed to order questions: ${err.message}`);
@@ -1403,17 +1460,35 @@ Order questions so that:
     };
 
     // Update question performance after answering
-    const updateQuestionPerformance = (questionId, isCorrect) => {
+    const updateQuestionPerformance = (questionId, isCorrect, { isRedo = false, previousResult = undefined } = {}) => {
         setSavedManualQuestions(prev => prev.map(q => {
             if (q.id === questionId) {
                 const wasIncorrect = !isCorrect;
+
+                if (isRedo) {
+                    let timesCorrect = q.timesCorrect || 0;
+                    if (previousResult === false && isCorrect) {
+                        timesCorrect += 1;
+                    } else if (previousResult === true && !isCorrect) {
+                        timesCorrect = Math.max(0, timesCorrect - 1);
+                    }
+
+                    return {
+                        ...q,
+                        timesCorrect,
+                        lastAnswered: Date.now(),
+                        nextReview: Date.now() + (isCorrect ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000),
+                        needsReview: wasIncorrect,
+                    };
+                }
+
                 return {
                     ...q,
                     timesAnswered: (q.timesAnswered || 0) + 1,
                     timesCorrect: (q.timesCorrect || 0) + (isCorrect ? 1 : 0),
                     lastAnswered: Date.now(),
-                    nextReview: Date.now() + (isCorrect ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000), // 24h if correct, 2h if wrong
-                    needsReview: wasIncorrect ? true : false, // Mark as needs review if incorrect, remove flag if correct
+                    nextReview: Date.now() + (isCorrect ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000),
+                    needsReview: wasIncorrect,
                     incorrectCount: wasIncorrect ? ((q.incorrectCount || 0) + 1) : (q.incorrectCount || 0)
                 };
             }
@@ -1421,7 +1496,6 @@ Order questions so that:
         }));
     };
 
-    // Get questions that need review (incorrectly answered)
 
     // Setup View
     if (currentView === 'setup') {
@@ -1693,9 +1767,10 @@ Order questions so that:
                                                     }
                                                 }
 
+                                                setPracticePhase('main');
+                                                setReviewIndices([]);
                                                 setCurrentView('practice');
                                                 setCurrentQuestionIndex(startIndex);
-                                                setScore({ correct: 0, total: 0 });
                                             }}
                                             className="theme-btn-primary setup-action-btn w-full rounded-xl py-4 text-base font-semibold transition"
                                         >
@@ -2179,11 +2254,21 @@ Order questions so that:
             );
         }
         
-        const currentQuestion = currentQuestions[currentQuestionIndex];
+        const allQuestions = currentQuestions;
+        const activeQuestions = practicePhase === 'review' && reviewIndices.length > 0
+            ? reviewIndices.map((index) => allQuestions[index])
+            : allQuestions;
+        const currentQuestion = activeQuestions[currentQuestionIndex];
+        const sourceIndex = practicePhase === 'review' && reviewIndices.length > 0
+            ? reviewIndices[currentQuestionIndex]
+            : currentQuestionIndex;
+        const score = computeScore(allQuestions, questionResults);
+        const progressPercent = practicePhase === 'review'
+            ? ((currentQuestionIndex + 1) / activeQuestions.length) * 100
+            : (score.answered / allQuestions.length) * 100;
         
         const getQuestionResult = (question, index) => {
-            const key = question.id || `ai-${index}`;
-            return questionResults[key];
+            return questionResults[getQuestionKey(question, index)];
         };
 
         return (
@@ -2208,9 +2293,9 @@ Order questions so that:
                                         </button>
                                     </div>
                                 <div className="space-y-1 max-h-[600px] overflow-y-auto setup-set-list">
-                                    {currentQuestions.map((q, index) => {
+                                    {allQuestions.map((q, index) => {
                                         const result = getQuestionResult(q, index);
-                                        const isCurrent = index === currentQuestionIndex;
+                                        const isCurrent = index === sourceIndex;
                                         const questionId = q.id || `ai-${index}`;
                                         
                                         let itemClass = "theme-sidebar-item";
@@ -2266,24 +2351,47 @@ Order questions so that:
                                 <ThemeToggleButton darkMode={darkMode} onToggle={toggleDarkMode} />
                             </div>
                             <div className="theme-text-muted text-sm">
-                                Question {currentQuestionIndex + 1} of {currentQuestions.length}
+                                {practicePhase === 'review' ? (
+                                    <>Review {currentQuestionIndex + 1} of {activeQuestions.length} missed</>
+                                ) : (
+                                    <>Question {currentQuestionIndex + 1} of {allQuestions.length}</>
+                                )}
                             </div>
                         </div>
 
+                        {practicePhase === 'review' && (
+                            <div className="theme-multi-hint mb-4 rounded-lg px-3 py-2 text-sm font-medium">
+                                Reviewing missed questions — {activeQuestions.length} to retry
+                            </div>
+                        )}
+
                         <div className="mb-6">
-                            <div className="theme-text-muted text-sm mb-2">Score: {score.correct} / {score.total}</div>
+                            <div className="theme-text-muted text-sm mb-2">
+                                Score: {score.correct} / {score.answered} correct
+                                {score.answered < score.total && (
+                                    <span> · {score.total - score.answered} unanswered</span>
+                                )}
+                            </div>
                             <div className="theme-progress-track w-full rounded-full h-2">
                                 <div
                                     className="theme-progress-fill h-2 rounded-full transition-all"
-                                    style={{ width: `${((currentQuestionIndex + 1) / currentQuestions.length) * 100}%` }}
+                                    style={{ width: `${progressPercent}%` }}
                                 ></div>
                             </div>
-                            {currentQuestion.id && (
-                                <div className="theme-text-muted text-xs mt-2">
-                                    Answered {currentQuestion.timesAnswered || 0} times • 
-                                    Correct {currentQuestion.timesCorrect || 0} times
-                                </div>
-                            )}
+                            {currentQuestion.id && (() => {
+                                const currentResult = questionResults[getQuestionKey(currentQuestion, sourceIndex)];
+                                if (currentResult === undefined) return null;
+                                return (
+                                    <div className="theme-text-muted text-xs mt-2">
+                                        {currentResult ? 'Marked correct' : 'Marked incorrect'}
+                                        {(currentQuestion.timesAnswered || 0) > 0 && (
+                                            <span>
+                                                {' '}· Lifetime: {currentQuestion.timesCorrect || 0} / {currentQuestion.timesAnswered || 0} correct
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         <h3 className="theme-text text-lg md:text-xl font-semibold mb-2">
@@ -2394,7 +2502,13 @@ Order questions so that:
                                     onClick={nextQuestion}
                                     className="theme-btn-primary setup-action-btn flex-1 rounded-lg py-3 px-4 font-semibold min-h-[44px] text-sm md:text-base transition"
                                 >
-                                    {currentQuestionIndex < currentQuestions.length - 1 ? <span><span className="hidden sm:inline">Next Question </span>→</span> : 'View Results'}
+                                    {currentQuestionIndex < activeQuestions.length - 1 ? (
+                                        <span><span className="hidden sm:inline">Next Question </span>→</span>
+                                    ) : practicePhase === 'main' && getWrongQuestionIndices(allQuestions, questionResults).length > 0 ? (
+                                        'Review Missed Questions'
+                                    ) : (
+                                        'View Results'
+                                    )}
                                 </button>
                             )}
                         </div>
@@ -2407,7 +2521,11 @@ Order questions so that:
 
     // Results View
     if (currentView === 'results') {
-        const percentage = Math.round((score.correct / score.total) * 100);
+        const allQuestions = getCurrentQuestions();
+        const score = computeScore(allQuestions, questionResults);
+        const percentage = score.answered > 0
+            ? Math.round((score.correct / score.answered) * 100)
+            : 0;
         
         return (
             <div className="theme-page min-h-screen p-4 md:p-8">
@@ -2420,7 +2538,7 @@ Order questions so that:
                         <div className="my-6 md:my-8">
                             <div className="theme-stat-value text-4xl md:text-6xl font-bold mb-2">{percentage}%</div>
                             <div className="theme-text-muted text-lg md:text-xl">
-                                {score.correct} out of {score.total} correct
+                                {score.correct} out of {score.answered} correct
                             </div>
                         </div>
 
